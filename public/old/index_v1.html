@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#e11d48" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>電子シール帳</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1>電子シール帳</h1>
+      <p class="subtitle">近くにいるとシールがもらえる</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="map">探す</button>
+      <button class="tab" data-tab="book">シール帳</button>
+      <button class="tab" data-tab="exchange">交換</button>
+    </nav>
+
+    <main>
+      <!-- 探すタブ -->
+      <section id="tab-map" class="tab-panel active">
+        <div class="card">
+          <button id="btn-locate" class="btn primary">現在地を取得して近くを探す</button>
+          <p id="location-status" class="status">位置情報はまだ取得していません</p>
+        </div>
+        <div id="spots-list" class="list"></div>
+      </section>
+
+      <!-- シール帳タブ -->
+      <section id="tab-book" class="tab-panel">
+        <div class="card">
+          <p class="hint">集めたシールがここに並びます</p>
+        </div>
+        <div id="collection-list" class="list sticker-grid"></div>
+      </section>
+
+      <!-- 交換タブ -->
+      <section id="tab-exchange" class="tab-panel">
+        <div class="card">
+          <button id="btn-exchange-toggle" class="btn secondary">交換モードをONにする</button>
+          <p id="exchange-status" class="status">交換モードはOFFです</p>
+        </div>
+        <div id="nearby-list" class="list"></div>
+        <div id="offers-list" class="list"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

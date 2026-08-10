@@ -1,0 +1,8 @@
+name = "sticker-book"
+compatibility_date = "2026-08-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sticker-book-db"
+database_id = "6d193766-0d24-4697-bcc5-819254da09b2"

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>電子シール帳</title>
+  
+  <!-- Leaflet.js (CDN) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>電子シール帳</h1>
+      <p>近くにいるとシールがもらえる</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="find">探す</button>
+      <button class="tab" data-tab="book">シール帳</button>
+      <button class="tab" data-tab="exchange">交換</button>
+    </nav>
+
+    <!-- 探すタブ -->
+    <main id="tab-find" class="tab-panel active">
+      <div class="card">
+        <button id="btn-locate" class="btn primary full">現在地を取得して近くを探す</button>
+        <p id="location-status" class="status-text"></p>
+      </div>
+
+      <!-- 地図表示エリア -->
+      <div id="map"></div>
+
+      <div id="spots-list"></div>
+    </main>
+
+    <!-- シール帳タブ -->
+    <main id="tab-book" class="tab-panel">
+      <div id="collection-list" class="grid"></div>
+    </main>
+
+    <!-- 交換タブ -->
+    <main id="tab-exchange" class="tab-panel">
+      <div class="card">
+        <button id="btn-exchange-toggle" class="btn secondary full">交換モードをONにする</button>
+        <p id="exchange-status" class="status-text">交換モードはOFFです</p>
+      </div>
+      <div id="offers-list"></div>
+      <div id="nearby-list"></div>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

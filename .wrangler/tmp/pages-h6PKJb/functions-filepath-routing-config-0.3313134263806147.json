@@ -1,0 +1,45 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/claim",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/claim.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/collection",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/collection.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/exchange",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/exchange.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/me",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/me.js:onRequest"
+      ]
+    },
+    {
+      "routePath": "/api/spots",
+      "mountPath": "/api",
+      "method": "",
+      "module": [
+        "api/spots.js:onRequest"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}

@@ -1,0 +1,32 @@
+/* 地図エリアのスタイル */
+#map {
+  width: 100%;
+  height: 280px;
+  border-radius: 16px;
+  margin: 16px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1; /* タブやダイアログの邪魔にならないよう調整 */
+}
+
+/* Leaflet ポップアップの文字色調整 */
+.leaflet-popup-content-wrapper {
+  background: #1e1e2d;
+  color: #fff;
+  border-radius: 8px;
+}
+.leaflet-popup-tip {
+  background: #1e1e2d;
+}
+.leaflet-popup-content {
+  margin: 12px;
+  font-size: 14px;
+}
+.leaflet-popup-content h4 {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+}
+.leaflet-popup-content button {
+  margin-top: 8px;
+  width: 100%;
+}
