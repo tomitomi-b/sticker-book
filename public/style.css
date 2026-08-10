@@ -1,32 +1,363 @@
-/* 地図エリアのスタイル */
-#map {
-  width: 100%;
-  height: 280px;
-  border-radius: 16px;
-  margin: 16px 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 1; /* タブやダイアログの邪魔にならないよう調整 */
+/* public/style.css */
+
+/* --- グローバル設定 --- */
+:root {
+  /* パステル水色基調のカラーパレット */
+  --bg-color: #e3f2fd;             /* 全体の背景色（ごく薄い水色） */
+  --panel-bg: #ffffff;             /* パネルの背景色（白） */
+  --primary-blue: #90caf9;         /* 主な水色（ボタン、強調） */
+  --hover-blue: #64b5f6;          /* ホバー時の水色 */
+  --text-main: #37474f;           /* メインのテキスト色（濃いグレーブルー） */
+  --text-sub: #78909c;            /* サブのテキスト色（薄いグレーブルー） */
+  --shadow-color: rgba(144, 202, 249, 0.2); /* 柔らかい水色の影 */
+  --accent-pink: #f48fb1;          /* アクセントカラー（可愛いピンク） */
+  --hover-pink: #f06292;
 }
 
-/* Leaflet ポップアップの文字色調整 */
-.leaflet-popup-content-wrapper {
-  background: #1e1e2d;
-  color: #fff;
-  border-radius: 8px;
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; /* 柔らかいゴシック体 */
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
 }
-.leaflet-popup-tip {
-  background: #1e1e2d;
+
+/* --- メインコンテナ --- */
+#app {
+  background-color: var(--panel-bg);
+  width: 90%;
+  max-width: 400px; /* スマホライクなコンパクトさ */
+  height: 90vh;
+  border-radius: 30px; /* かなり丸く */
+  box-shadow: 0 10px 30px var(--shadow-color); /* 柔らかい影 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 角の丸みからはみ出さないように */
+  border: 4px solid #ffffff; /* 白い縁取りで可愛く */
 }
-.leaflet-popup-content {
-  margin: 12px;
-  font-size: 14px;
+
+/* --- ヘッダー（タイトルエリア） --- */
+header {
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: relative;
 }
-.leaflet-popup-content h4 {
-  margin: 0 0 6px 0;
-  font-size: 15px;
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
-.leaflet-popup-content button {
-  margin-top: 8px;
+
+h1 i { /* アイコンがあれば */
+  margin-right: 8px;
+  font-size: 1.2rem;
+}
+
+/* --- リストエリア --- */
+#list-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#sticker-list {
+  flex: 1;
+  overflow-y: auto; /* スクロール可能に */
+  padding: 20px;
+  list-style: none;
+  margin: 0;
+}
+
+/* スクロールバーのデザイン */
+#sticker-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#sticker-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#sticker-list::-webkit-scrollbar-thumb {
+  background: var(--primary-blue);
+  border-radius: 4px;
+}
+
+/* 各ステッカーアイテム */
+.sticker-item {
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 15px rgba(144, 202, 249, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.sticker-item:hover {
+  border-color: var(--primary-blue); /* ホバー時に白い縁を水色に */
+  transform: translateY(-3px); /* 少し浮き上がる */
+}
+
+.sticker-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.sticker-name {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.sticker-date {
+  font-size: 0.8rem;
+  color: var(--text-sub);
+}
+
+/* 各アイテムの右側のアイコンエリア */
+.sticker-item-action {
+  color: var(--text-sub);
+  transition: color 0.3s ease;
+}
+
+.sticker-item:hover .sticker-item-action {
+  color: var(--primary-blue); /* アイテムホバー時にアイコンを水色に */
+}
+
+/* --- 詳細画面 --- */
+#detail-screen {
+  display: none; /* 初期状態は非表示 */
+  flex: 1;
+  flex-direction: column;
+  background-color: var(--panel-bg);
+}
+
+.detail-header {
+  padding: 15px 20px;
+  border-bottom: 2px solid #e3f2fd;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+#back-btn {
+  background: none;
+  border: none;
+  color: var(--primary-blue);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+  left: 20px;
+  transition: color 0.3s ease;
+}
+
+#back-btn:hover {
+  color: var(--hover-blue);
+}
+
+#detail-title-display {
+  flex: 1;
+  text-align: center;
+  font-weight: bold;
+  color: var(--text-main);
+  font-size: 1.2rem;
+}
+
+#detail-date-display {
+  font-size: 0.8rem;
+  color: var(--text-sub);
+  position: absolute;
+  right: 20px;
+}
+
+.detail-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 30px 20px;
+  text-align: center;
+}
+
+/* QRコード表示エリア（もしあれば） */
+#qr-code {
+  width: 150px;
+  height: 150px;
+  background-color: #ffffff;
+  border-radius: 25px; /* QRコードも丸く */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 30px;
+  padding: 15px;
+  box-shadow: 0 8px 25px var(--shadow-color);
+  border: 5px solid #ffffff; /* 白い縁 */
+}
+
+#qr-code img {
+  max-width: 100%;
+  height: auto;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: auto;
+  padding-bottom: 20px;
+}
+
+/* --- ボタンの基本スタイル（可愛く） --- */
+.btn {
+  border: none;
+  border-radius: 50px; /* 丸いボタン */
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active {
+  transform: translateY(1px); /* 押した時に少し沈む */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 水色ボタン */
+.btn-primary {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--hover-blue);
+}
+
+/* ピンク色ボタン（アクセント） */
+.btn-accent {
+  background-color: var(--accent-pink);
+  color: white;
+}
+
+.btn-accent:hover {
+  background-color: var(--hover-pink);
+}
+
+/* グレーボタン（キャンセルなど） */
+.btn-secondary {
+  background-color: #e0e0e0;
+  color: #757575;
+}
+
+.btn-secondary:hover {
+  background-color: #d6d6d6;
+}
+
+/* フッター（追加ボタンエリア） */
+footer {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 追加ボタン */
+#add-btn {
+  background-color: var(--accent-pink); /* 追加はピンク */
+  color: white;
+  border: none;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(244, 143, 177, 0.4);
+  transition: all 0.3s ease;
+}
+
+#add-btn:hover {
+  background-color: var(--hover-pink);
+  transform: scale(1.1); /* 少し大きくなる */
+}
+
+#add-btn:active {
+  transform: scale(0.95);
+}
+
+/* --- ポップアップ（入力フォーム） --- */
+.popup-overlay {
+  display: none; /* 初期状態は非表示 */
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4); /* 暗くする背景 */
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px); /* 背景をぼかす */
+}
+
+.popup-content {
+  background-color: white;
+  width: 90%;
+  max-width: 350px;
+  border-radius: 25px;
+  padding: 30px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.popup-title {
+  text-align: center;
+  color: var(--text-main);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.popup-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--bg-color);
+  border-radius: 12px;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  box-sizing: border-box; /* paddingを含める */
+}
+
+.popup-input:focus {
+  border-color: var(--primary-blue); /* フォーカス時に水色に */
+  outline: none;
+  background-color: #ffffff;
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
 }
