@@ -3,7 +3,7 @@
 /* --- グローバル設定 --- */
 :root {
   /* パステル水色基調のカラーパレット */
-  --bg-color: #e3f2fd;             /* 全体の背景色（ごく薄い水色） */
+  --bg-color: #f0f8ff;             /* 全体の背景色（アリスブルー：ごく薄い水色） */
   --panel-bg: #ffffff;             /* パネルの背景色（白） */
   --primary-blue: #90caf9;         /* 主な水色（ボタン、強調） */
   --hover-blue: #64b5f6;          /* ホバー時の水色 */
@@ -14,230 +14,102 @@
   --hover-pink: #f06292;
 }
 
-body {
-  font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; /* 柔らかいゴシック体 */
-  background-color: var(--bg-color);
-  color: var(--text-main);
+html, body {
   margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+  background-color: var(--bg-color); /* 水色を強制 */
+  color: var(--text-main);
 }
 
-/* --- メインコンテナ --- */
-#app {
-  background-color: var(--panel-bg);
-  width: 90%;
-  max-width: 400px; /* スマホライクなコンパクトさ */
-  height: 90vh;
-  border-radius: 30px; /* かなり丸く */
-  box-shadow: 0 10px 30px var(--shadow-color); /* 柔らかい影 */
+/* --- 【最重要】地図エリア（#map）の設定 --- */
+#map {
+  width: 100%;
+  height: 100vh; /* スマホ・PC問わず画面いっぱいに表示 */
+  z-index: 1;    /* 地図を最背面に */
+}
+
+/* --- コンテンツエリア（地図の上に重ねる） --- */
+.content-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 10;   /* 地図より前に表示 */
+  pointer-events: none; /* 下の地図を操作できるようにする */
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 角の丸みからはみ出さないように */
-  border: 4px solid #ffffff; /* 白い縁取りで可愛く */
 }
 
-/* --- ヘッダー（タイトルエリア） --- */
+/* ヘッダー */
 header {
-  background-color: var(--primary-blue);
-  color: white;
-  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.9); /* 半透明の白 */
+  color: var(--primary-blue);
+  padding: 15px;
   text-align: center;
-  position: relative;
+  border-bottom: 2px solid var(--primary-blue);
+  pointer-events: auto; /* 操作可能にする */
+  box-shadow: 0 4px 15px var(--shadow-color);
 }
 
-h1 {
+header h1 {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.2rem;
   letter-spacing: 1px;
 }
 
-h1 i { /* アイコンがあれば */
-  margin-right: 8px;
-  font-size: 1.2rem;
-}
-
-/* --- リストエリア --- */
-#list-screen {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-#sticker-list {
-  flex: 1;
-  overflow-y: auto; /* スクロール可能に */
-  padding: 20px;
-  list-style: none;
-  margin: 0;
-}
-
-/* スクロールバーのデザイン */
-#sticker-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-#sticker-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-#sticker-list::-webkit-scrollbar-thumb {
-  background: var(--primary-blue);
-  border-radius: 4px;
-}
-
-/* 各ステッカーアイテム */
-.sticker-item {
-  background-color: #ffffff;
-  border-radius: 20px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 4px 15px rgba(144, 202, 249, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.sticker-item:hover {
-  border-color: var(--primary-blue); /* ホバー時に白い縁を水色に */
-  transform: translateY(-3px); /* 少し浮き上がる */
-}
-
-.sticker-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.sticker-name {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: var(--text-main);
-  margin-bottom: 4px;
-}
-
-.sticker-date {
-  font-size: 0.8rem;
-  color: var(--text-sub);
-}
-
-/* 各アイテムの右側のアイコンエリア */
-.sticker-item-action {
-  color: var(--text-sub);
-  transition: color 0.3s ease;
-}
-
-.sticker-item:hover .sticker-item-action {
-  color: var(--primary-blue); /* アイテムホバー時にアイコンを水色に */
-}
-
-/* --- 詳細画面 --- */
-#detail-screen {
-  display: none; /* 初期状態は非表示 */
-  flex: 1;
-  flex-direction: column;
+/* ポップアップ（入力フォーム）の可愛いデザイン */
+.leaflet-popup-content-wrapper {
   background-color: var(--panel-bg);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px var(--shadow-color);
+  padding: 10px;
 }
 
-.detail-header {
-  padding: 15px 20px;
-  border-bottom: 2px solid #e3f2fd;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-#back-btn {
-  background: none;
-  border: none;
-  color: var(--primary-blue);
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0;
-  position: absolute;
-  left: 20px;
-  transition: color 0.3s ease;
-}
-
-#back-btn:hover {
-  color: var(--hover-blue);
-}
-
-#detail-title-display {
-  flex: 1;
-  text-align: center;
-  font-weight: bold;
+.leaflet-popup-content {
   color: var(--text-main);
-  font-size: 1.2rem;
+  font-family: sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
-#detail-date-display {
-  font-size: 0.8rem;
-  color: var(--text-sub);
-  position: absolute;
-  right: 20px;
-}
-
-.detail-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 30px 20px;
-  text-align: center;
-}
-
-/* QRコード表示エリア（もしあれば） */
-#qr-code {
-  width: 150px;
-  height: 150px;
-  background-color: #ffffff;
-  border-radius: 25px; /* QRコードも丸く */
+/* ポップアップ内の入力欄とボタン */
+.popup-form {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto 30px;
-  padding: 15px;
-  box-shadow: 0 8px 25px var(--shadow-color);
-  border: 5px solid #ffffff; /* 白い縁 */
+  flex-direction: column;
+  gap: 10px;
 }
 
-#qr-code img {
-  max-width: 100%;
-  height: auto;
+.popup-input {
+  padding: 8px;
+  border: 2px solid #e3f2fd;
+  border-radius: 10px;
+  font-size: 0.9rem;
 }
 
-.detail-actions {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-top: auto;
-  padding-bottom: 20px;
+.popup-input:focus {
+  border-color: var(--primary-blue);
+  outline: none;
 }
 
-/* --- ボタンの基本スタイル（可愛く） --- */
+/* 可愛いボタン共通 */
 .btn {
   border: none;
   border-radius: 50px; /* 丸いボタン */
-  padding: 10px 20px;
-  font-size: 0.9rem;
+  padding: 8px 15px;
+  font-size: 0.8rem;
   font-weight: bold;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   transition: all 0.3s ease;
+  pointer-events: auto; /* 操作可能にする */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .btn:active {
-  transform: translateY(1px); /* 押した時に少し沈む */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(1px);
 }
 
 /* 水色ボタン */
@@ -250,114 +122,28 @@ h1 i { /* アイコンがあれば */
   background-color: var(--hover-blue);
 }
 
-/* ピンク色ボタン（アクセント） */
+/* ピンクボタン（追加） */
 .btn-accent {
   background-color: var(--accent-pink);
   color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-accent:hover {
   background-color: var(--hover-pink);
+  transform: scale(1.1);
 }
 
-/* グレーボタン（キャンセルなど） */
-.btn-secondary {
-  background-color: #e0e0e0;
-  color: #757575;
-}
-
-.btn-secondary:hover {
-  background-color: #d6d6d6;
-}
-
-/* フッター（追加ボタンエリア） */
+/* フッター（追加ボタンを配置） */
 footer {
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-}
-
-/* 追加ボタン */
-#add-btn {
-  background-color: var(--accent-pink); /* 追加はピンク */
-  color: white;
-  border: none;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  font-size: 2rem;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 6px 20px rgba(244, 143, 177, 0.4);
-  transition: all 0.3s ease;
-}
-
-#add-btn:hover {
-  background-color: var(--hover-pink);
-  transform: scale(1.1); /* 少し大きくなる */
-}
-
-#add-btn:active {
-  transform: scale(0.95);
-}
-
-/* --- ポップアップ（入力フォーム） --- */
-.popup-overlay {
-  display: none; /* 初期状態は非表示 */
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.4); /* 暗くする背景 */
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(5px); /* 背景をぼかす */
-}
-
-.popup-content {
-  background-color: white;
-  width: 90%;
-  max-width: 350px;
-  border-radius: 25px;
-  padding: 30px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.popup-title {
-  text-align: center;
-  color: var(--text-main);
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
-.popup-input {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid var(--bg-color);
-  border-radius: 12px;
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-size: 0.9rem;
-  box-sizing: border-box; /* paddingを含める */
-}
-
-.popup-input:focus {
-  border-color: var(--primary-blue); /* フォーカス時に水色に */
-  outline: none;
-  background-color: #ffffff;
-}
-
-.popup-actions {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 10px;
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  z-index: 20;
 }
