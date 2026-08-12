@@ -1,335 +1,51 @@
-:root {
-  --cover-bg: #8e24aa;
-  --cover-gold: #ffd54f;
-  --paper-bg: #fbf3e2;
-  --paper-bg-dark: #f0e4c8;
-  --primary-blue: #90caf9;
-  --text-main: #37474f;
-  --accent-pink: #f48fb1;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
-  overflow: hidden;
-  background-color: #263238;
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* 本の表紙デザイン */
-.book-cover {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: linear-gradient(135deg, #ab47bc, #6a1b9a);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
-}
-
-.cover-content {
-  background: rgba(255, 255, 255, 0.1);
-  border: 4px double var(--cover-gold);
-  border-radius: 20px;
-  padding: 40px 30px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(5px);
-}
-
-.cover-title {
-  color: var(--cover-gold);
-  font-size: 2rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
-  margin-bottom: 10px;
-}
-
-.cover-subtitle {
-  color: #f3e5f5;
-  font-size: 0.9rem;
-  margin-bottom: 30px;
-}
-
-.open-book-btn {
-  background: var(--cover-gold);
-  color: #4a148c;
-  border: none;
-  border-radius: 25px;
-  padding: 12px 30px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  transition: transform 0.2s, background 0.2s;
-}
-
-.open-book-btn:active {
-  transform: scale(0.95);
-}
-
-/* シール帳本体 */
-.sticker-book {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: #e8dcc4;
-  display: flex;
-  flex-direction: column;
-}
-
-.book-bar {
-  height: 50px;
-  background-color: var(--primary-blue);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  position: relative;
-  z-index: 2;
-}
-
-.book-bar h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #1565c0;
-}
-
-.nav-btn {
-  background: white;
-  border: none;
-  border-radius: 15px;
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: var(--text-main);
-  cursor: pointer;
-}
-
-.nav-btn.accent {
-  background: var(--accent-pink);
-  color: white;
-}
-
-.book-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  padding: 10px 10px 0;
-  box-sizing: border-box;
-}
-
-/* シール台紙（台紙＝厚紙っぽいページ） */
-.sticker-canvas {
-  flex: 1;
-  background-color: var(--paper-bg);
-  background-image:
-    /* ノート風のドット */
-    radial-gradient(#d8c9a3 8%, transparent 9%),
-    radial-gradient(#d8c9a3 8%, transparent 9%),
-    /* かすかな紙の繊維っぽい斜線ノイズ */
-    repeating-linear-gradient(115deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
-  background-size: 22px 22px, 22px 22px, auto;
-  background-position: 0 0, 11px 11px, 0 0;
-  position: relative;
-  overflow: hidden;
-  border-radius: 14px 14px 4px 4px;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.6) inset,
-    0 -6px 10px -6px rgba(0,0,0,0.12) inset,
-    0 10px 0 -4px var(--paper-bg-dark),
-    0 14px 22px rgba(0,0,0,0.25);
-}
-
-/* ページの綴じ側（左端）にリング穴っぽい影を少し */
-.sticker-canvas::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(0,0,0,0.06), transparent 18px);
-}
-
-.canvas-hint {
-  position: absolute;
-  top: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.85);
-  padding: 5px 15px;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  color: #8d7b55;
-  pointer-events: none;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-}
-
-/* 貼られたシール（台紙上）：絵柄の形そのままの白フチ（ダイカット風）＋ツヤ・浮き上がり */
+/* 貼られたシール：ボンボンドロップカプセル風 */
 .placed-sticker {
   position: absolute;
-  display: inline-block;
-  font-size: var(--sticker-size, 3rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  font-size: 2.2rem;
   line-height: 1;
   cursor: move;
   user-select: none;
   -webkit-user-drag: none;
-  user-drag: none;
   touch-action: none;
-  /* 白フチを四方＋斜め方向に重ねて絵柄の輪郭に沿ったダイカット風の縁取りを作る */
-  filter:
-    drop-shadow(1.5px 0 0 #fff)
-    drop-shadow(-1.5px 0 0 #fff)
-    drop-shadow(0 1.5px 0 #fff)
-    drop-shadow(0 -1.5px 0 #fff)
-    drop-shadow(1.5px 1.5px 0 #fff)
-    drop-shadow(-1.5px 1.5px 0 #fff)
-    drop-shadow(1.5px -1.5px 0 #fff)
-    drop-shadow(-1.5px -1.5px 0 #fff)
-    drop-shadow(0 4px 3px rgba(0,0,0,0.22))
-    drop-shadow(0 8px 8px rgba(0,0,0,0.16));
+
+  /* 樹脂ベースの台座とぷっくり立体感 */
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(240, 240, 240, 0.8) 100%);
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  
+  /* ドーム状の厚み影 & 接地立体影 */
+  box-shadow:
+    inset 0 4px 6px rgba(255, 255, 255, 0.9),
+    inset 0 -5px 8px rgba(0, 0, 0, 0.15),
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.15);
+  
   transition: transform 0.12s ease;
+}
+
+/* カプセル表面のプックリ光沢ハイライト */
+.placed-sticker::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  width: 20px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 10px / 5px;
+  transform: rotate(-30deg);
+  pointer-events: none;
 }
 
 .placed-sticker:active {
   transform: scale(1.15) !important;
-}
-
-/* 下部トレイ */
-.sticker-tray {
-  height: 116px;
-  background: #fffaf0;
-  border-top: 2px solid #e0d3ae;
-  display: flex;
-  flex-direction: column;
-  padding: 8px 15px;
-  box-shadow: 0 -4px 10px rgba(0,0,0,0.06);
-}
-
-.tray-title {
-  font-size: 0.75rem;
-  color: #a08b5f;
-  margin-bottom: 5px;
-}
-
-.tray-list {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  align-items: center;
-  height: 100%;
-}
-
-.tray-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 60px;
-  cursor: grab;
-  user-select: none;
-}
-
-.tray-item .icon {
-  width: 46px;
-  height: 46px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #fbfbfb 45%, #f0f0f0 100%);
-  border: 2px solid #ffffff;
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 2px 4px rgba(0,0,0,0.15),
-    0 4px 8px rgba(0,0,0,0.1);
-}
-
-.tray-item .name {
-  font-size: 0.65rem;
-  color: var(--text-main);
-  text-align: center;
-  margin-top: 4px;
-}
-
-/* 未獲得＝台紙から「剥がした跡」のような表現 */
-.tray-item.locked {
-  cursor: not-allowed;
-}
-
-.tray-item.locked .icon {
-  background: var(--paper-bg-dark);
-  border: 2px dashed #c3b083;
-  box-shadow:
-    inset 0 2px 4px rgba(0,0,0,0.12),
-    inset 0 -1px 0 rgba(255,255,255,0.4);
-  color: #b8a374;
-  font-size: 1.1rem;
-}
-
-.tray-item.locked .name {
-  color: #b0a074;
-}
-
-/* マップモーダル */
-.map-modal {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 500;
-  display: flex;
-  flex-direction: column;
-  background: white;
-}
-
-.map-modal-header {
-  height: 45px;
-  background: #37474f;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 15px;
-  font-size: 0.9rem;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-#map {
-  flex: 1;
-  width: 100%;
-}
-
-.get-btn {
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 5px 10px;
-  cursor: pointer;
-  margin-top: 5px;
-  font-size: 0.75rem;
+    inset 0 4px 6px rgba(255, 255, 255, 0.9),
+    inset 0 -5px 8px rgba(0, 0, 0, 0.15),
+    0 12px 20px rgba(0, 0, 0, 0.25);
 }
