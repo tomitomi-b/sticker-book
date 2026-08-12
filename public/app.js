@@ -34,24 +34,24 @@ const STICKERS = [
   }
 ];
 
-// ストレージキー
+const TOTAL_PAGES = 3;
+let currentPage = 1;
+
 const STORAGE_KEY_UNLOCKED = 'sticker_book_unlocked';
-const STORAGE_KEY_PLACED = 'sticker_book_placed_v3';
-const STORAGE_KEY_THEME = 'sticker_book_theme';
+const STORAGE_KEY_PLACED_PAGE = 'sticker_book_placed_page_';
 
 let unlockedStickers = [];
-let placedStickers = [];
+let pageStickers = {}; // ページごとのシールデータ { 1: [], 2: [], 3: [] }
 let map = null;
 
-// 初期化
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
   setupEvents();
   renderTray();
   renderCanvas();
+  updatePageDisplay();
 });
 
-// データ読み込み
 function loadData() {
   const savedUnlocked = localStorage.getItem(STORAGE_KEY_UNLOCKED);
   if (savedUnlocked) {
@@ -61,37 +61,38 @@ function loadData() {
     saveData();
   }
 
-  const savedPlaced = localStorage.getItem(STORAGE_KEY_PLACED);
-  if (savedPlaced) {
-    placedStickers = JSON.parse(savedPlaced);
-  } else {
-    placedStickers = [
-      { id: 'shinjuku-tower', x: 35, y: 35 },
-      { id: 'tokyo-station', x: 55, y: 42 }
-    ];
+  for (let p = 1; p <= TOTAL_PAGES; p++) {
+    const saved = localStorage.getItem(STORAGE_KEY_PLACED_PAGE + p);
+    if (saved) {
+      pageStickers[p] = JSON.parse(saved);
+    } else {
+      pageStickers[p] = (p === 1) ? [
+        { id: 'shinjuku-tower', x: 25, y: 35 },
+        { id: 'tokyo-station', x: 65, y: 42 }
+      ] : [];
+    }
   }
-
-  // テーマ適用
-  const savedTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'default';
-  document.body.setAttribute('data-theme', savedTheme);
 }
 
 function saveData() {
   localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedStickers));
-  localStorage.setItem(STORAGE_KEY_PLACED, JSON.stringify(placedStickers));
+  for (let p = 1; p <= TOTAL_PAGES; p++) {
+    localStorage.setItem(STORAGE_KEY_PLACED_PAGE + p, JSON.stringify(pageStickers[p]));
+  }
 }
 
-// イベント設定
 function setupEvents() {
   const bookCover = document.getElementById('book-cover');
   const stickerBook = document.getElementById('sticker-book');
   const openBtn = document.getElementById('open-book-btn');
   const closeBtn = document.getElementById('close-book-btn');
+  const prevBtn = document.getElementById('prev-page-btn');
+  const nextBtn = document.getElementById('next-page-btn');
   const mapToggleBtn = document.getElementById('map-toggle-btn');
   const mapModal = document.getElementById('map-modal');
   const closeMapBtn = document.getElementById('close-map-btn');
 
-  // 「シール帳をひらく」ボタン：パタッと表紙を開くアニメーション
+  // 表紙を開く
   if (openBtn) {
     openBtn.addEventListener('click', () => {
       bookCover.classList.add('opened');
@@ -102,7 +103,7 @@ function setupEvents() {
     });
   }
 
-  // 「← 表紙へ」ボタン：表紙を閉じるアニメーション
+  // 表紙へ閉じる
   if (closeBtn) {
     closeBtn.addEventListener('click', () => {
       bookCover.classList.remove('hidden');
@@ -113,7 +114,23 @@ function setupEvents() {
     });
   }
 
-  // 「🗺️ スポットマップ」ボタン
+  // ページ切り替え
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        changePage(currentPage - 1);
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < TOTAL_PAGES) {
+        changePage(currentPage + 1);
+      }
+    });
+  }
+
   if (mapToggleBtn) {
     mapToggleBtn.addEventListener('click', () => {
       mapModal.classList.remove('hidden');
@@ -121,7 +138,6 @@ function setupEvents() {
     });
   }
 
-  // 「×」閉じるボタン
   if (closeMapBtn) {
     closeMapBtn.addEventListener('click', () => {
       mapModal.classList.add('hidden');
@@ -129,7 +145,36 @@ function setupEvents() {
   }
 }
 
-// 下部トレイ描画
+function changePage(newPage) {
+  const canvas = document.getElementById('sticker-canvas');
+  canvas.style.opacity = '0.2';
+  
+  setTimeout(() => {
+    currentPage = newPage;
+    updatePageDisplay();
+    renderCanvas();
+    renderTray();
+    canvas.style.opacity = '1';
+  }, 150);
+}
+
+function updatePageDisplay() {
+  const display = document.getElementById('page-num-display');
+  if (display) {
+    display.textContent = `${currentPage} / ${TOTAL_PAGES} ページ`;
+  }
+}
+
+// すべてのページを通して全シールの中で何枚貼られているか確認
+function isStickerPlacedAnywhere(stickerId) {
+  for (let p = 1; p <= TOTAL_PAGES; p++) {
+    if (pageStickers[p].some(s => s.id === stickerId)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function renderTray() {
   const trayList = document.getElementById('tray-list');
   if (!trayList) return;
@@ -137,7 +182,7 @@ function renderTray() {
 
   STICKERS.forEach(sticker => {
     const isUnlocked = unlockedStickers.includes(sticker.id);
-    const isPlaced = placedStickers.some(p => p.id === sticker.id);
+    const isPlaced = isStickerPlacedAnywhere(sticker.id);
 
     const item = document.createElement('div');
     item.className = `tray-item ${!isUnlocked ? 'locked' : ''} ${isPlaced ? 'placed-already' : ''}`;
@@ -149,9 +194,9 @@ function renderTray() {
       `;
 
       item.addEventListener('pointerdown', (e) => {
-        if (placedStickers.some(p => p.id === sticker.id)) return;
+        if (isStickerPlacedAnywhere(sticker.id)) return;
         
-        placedStickers.push({
+        pageStickers[currentPage].push({
           id: sticker.id,
           x: 40 + (Math.random() * 10 - 5),
           y: 40 + (Math.random() * 10 - 5)
@@ -171,7 +216,6 @@ function renderTray() {
   });
 }
 
-// 台紙上のシール描画
 function renderCanvas() {
   const canvas = document.getElementById('sticker-canvas');
   if (!canvas) return;
@@ -179,7 +223,9 @@ function renderCanvas() {
   const existingStickers = canvas.querySelectorAll('.placed-sticker');
   existingStickers.forEach(el => el.remove());
 
-  placedStickers.forEach((item, index) => {
+  const currentStickers = pageStickers[currentPage] || [];
+
+  currentStickers.forEach((item, index) => {
     const stickerData = STICKERS.find(s => s.id === item.id);
     if (!stickerData) return;
 
@@ -194,7 +240,6 @@ function renderCanvas() {
   });
 }
 
-// シールの移動処理
 function makeDraggable(el, index, canvas) {
   let isDragging = false;
   let startX, startY, startLeftPercent, startTopPercent;
@@ -208,8 +253,8 @@ function makeDraggable(el, index, canvas) {
     startX = e.clientX;
     startY = e.clientY;
 
-    startLeftPercent = placedStickers[index].x;
-    startTopPercent = placedStickers[index].y;
+    startLeftPercent = pageStickers[currentPage][index].x;
+    startTopPercent = pageStickers[currentPage][index].y;
   };
 
   const onPointerMove = (e) => {
@@ -228,8 +273,8 @@ function makeDraggable(el, index, canvas) {
     el.style.left = `${newX}%`;
     el.style.top = `${newY}%`;
 
-    placedStickers[index].x = newX;
-    placedStickers[index].y = newY;
+    pageStickers[currentPage][index].x = newX;
+    pageStickers[currentPage][index].y = newY;
   };
 
   const onPointerUp = (e) => {
@@ -248,7 +293,6 @@ function makeDraggable(el, index, canvas) {
   el.addEventListener('pointercancel', onPointerUp);
 }
 
-// マップ初期化
 function initMap() {
   if (map) {
     map.invalidateSize();

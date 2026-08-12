@@ -5,53 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>電子シール帳</title>
   
-  <!-- キャッシュ無効化設定 -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
-  <!-- Leaflet Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-  
-  <!-- スタイルシート (キャッシュ回避バージョン指定) -->
-  <link rel="stylesheet" href="./style-new.css?v=100">
+  <link rel="stylesheet" href="./style-new.css?v=200">
 </head>
 <body>
 
-  <!-- 本の表紙カバー -->
+  <!-- 本の表紙（折りたたみスタート画面） -->
   <div id="book-cover" class="book-cover">
     <div class="cover-content">
-      <div class="cover-title">マイ・シールブック</div>
-      <div class="cover-subtitle">My Special Sticker Book</div>
+      <div class="ring-spine-left"></div>
+      <div class="cover-title">Sticker Collecting Book</div>
+      <div class="cover-subtitle">✨ マイシールコレクション ✨</div>
       <button id="open-book-btn" class="open-book-btn">シール帳をひらく 📖</button>
     </div>
   </div>
 
-  <!-- シール帳本体 (めくった後の画面) -->
+  <!-- シール帳本体（見開きノート形式） -->
   <div id="sticker-book" class="sticker-book hidden">
-    <!-- ヘッダーバー -->
+    <!-- 上部ナビゲーション -->
     <div class="book-bar">
       <button id="close-book-btn" class="nav-btn">← 表紙へ</button>
-      <h2>マイシール帳</h2>
+      <div class="page-controls">
+        <button id="prev-page-btn" class="nav-btn page-btn">◀ 前のページ</button>
+        <span id="page-num-display" class="page-num">1 / 3 ページ</span>
+        <button id="next-page-btn" class="nav-btn page-btn">次のページ ▶</button>
+      </div>
       <button id="map-toggle-btn" class="nav-btn accent">🗺️ スポットマップ</button>
     </div>
 
-    <!-- メインコンテンツ領域 -->
+    <!-- 見開きノート台紙 -->
     <div class="book-body">
-      <!-- シール台紙 (ドラッグ＆ドロップ領域) -->
       <div id="sticker-canvas" class="sticker-canvas">
-        <div class="canvas-hint">集めたシールをここにドラッグ＆ドロップで貼れるよ！</div>
+        <div class="ring-spine"></div>
+        <div class="canvas-hint">集めたシールをドラッグ＆ドロップで貼れるよ！</div>
       </div>
 
-      <!-- 下部トレイ (獲得済みシール置き場) -->
+      <!-- 下部トレイ -->
       <div class="sticker-tray">
-        <div class="tray-title">集めたシール (スワイプ / ドラッグ)</div>
+        <div class="tray-title">集めたシール (タップまたはドラッグで移動)</div>
         <div id="tray-list" class="tray-list"></div>
       </div>
     </div>
   </div>
 
-  <!-- マップ表示用モーダル -->
+  <!-- マップモーダル -->
   <div id="map-modal" class="map-modal hidden">
     <div class="map-modal-header">
       <span>シール収集マップ</span>
@@ -60,8 +61,7 @@
     <div id="map"></div>
   </div>
 
-  <!-- Leaflet Map JS & アプリ本編スクリプト -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="./app.js?v=100"></script>
+  <script src="./app.js?v=200"></script>
 </body>
 </html>
