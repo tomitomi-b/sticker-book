@@ -188,6 +188,8 @@ html, body {
   line-height: 1;
   cursor: move;
   user-select: none;
+  -webkit-user-drag: none;
+  user-drag: none;
   touch-action: none;
   /* 白フチを四方＋斜め方向に重ねて絵柄の輪郭に沿ったダイカット風の縁取りを作る */
   filter:

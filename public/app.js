@@ -150,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.fontSize = `${st.size || 3}rem`;
 
       makeDraggable(el, st.instanceId);
+      el.setAttribute('draggable', 'false');
       canvas.appendChild(el);
     });
   }
@@ -161,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rotation = placedStickers.find(s => s.instanceId === instanceId)?.rotation || 0;
 
     function onStart(e) {
+      if (!e.touches) e.preventDefault();
       isDragging = true;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
