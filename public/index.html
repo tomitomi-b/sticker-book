@@ -8,15 +8,48 @@
   <link rel="stylesheet" href="./style-new.css">
 </head>
 <body>
-  <header>
-    <h1>電子シール帳</h1>
-  </header>
 
-  <div id="map"></div>
+  <!-- 本の表紙カバー -->
+  <div id="book-cover" class="book-cover">
+    <div class="cover-content">
+      <div class="cover-title">マイ・シールブック</div>
+      <div class="cover-subtitle">My Special Sticker Book</div>
+      <button id="open-book-btn" class="open-book-btn">シール帳をひらく 📖</button>
+    </div>
+  </div>
 
-  <footer>
-    <button id="add-btn" class="btn btn-accent">+</button>
-  </footer>
+  <!-- シール帳本体 (めくった後の画面) -->
+  <div id="sticker-book" class="sticker-book hidden">
+    <!-- ヘッダーバー -->
+    <div class="book-bar">
+      <button id="close-book-btn" class="nav-btn">← 表紙へ</button>
+      <h2>マイシール帳</h2>
+      <button id="map-toggle-btn" class="nav-btn accent">🗺️ スポットマップ</button>
+    </div>
+
+    <!-- メインコンテンツ領域 -->
+    <div class="book-body">
+      <!-- シール台紙 (ドラッグ＆ドロップ領域) -->
+      <div id="sticker-canvas" class="sticker-canvas">
+        <div class="canvas-hint">集めたシールをここにドラッグ＆ドロップで貼れるよ！</div>
+      </div>
+
+      <!-- 下部トレイ (獲得済みシール置き場) -->
+      <div class="sticker-tray">
+        <div class="tray-title">集めたシール (スワイプ / ドラッグ)</div>
+        <div id="tray-list" class="tray-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- マップ表示用モーダル -->
+  <div id="map-modal" class="map-modal hidden">
+    <div class="map-modal-header">
+      <span>シール収集マップ</span>
+      <button id="close-map-btn" class="close-btn">&times;</button>
+    </div>
+    <div id="map"></div>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="./app.js"></script>

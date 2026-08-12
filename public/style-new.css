@@ -1,17 +1,11 @@
-/* public/style.css */
-
-/* --- グローバル設定 --- */
 :root {
-  /* パステル水色基調のカラーパレット */
-  --bg-color: #f0f8ff;             /* 全体の背景色（アリスブルー：ごく薄い水色） */
-  --panel-bg: #ffffff;             /* パネルの背景色（白） */
-  --primary-blue: #90caf9;         /* 主な水色（ボタン、強調） */
-  --hover-blue: #64b5f6;          /* ホバー時の水色 */
-  --text-main: #37474f;           /* メインのテキスト色（濃いグレーブルー） */
-  --text-sub: #78909c;            /* サブのテキスト色（薄いグレーブルー） */
-  --shadow-color: rgba(144, 202, 249, 0.2); /* 柔らかい水色の影 */
-  --accent-pink: #f48fb1;          /* アクセントカラー（可愛いピンク） */
-  --hover-pink: #f06292;
+  --cover-bg: #8e24aa;
+  --cover-gold: #ffd54f;
+  --paper-bg: #fbf3e2;
+  --paper-bg-dark: #f0e4c8;
+  --primary-blue: #90caf9;
+  --text-main: #37474f;
+  --accent-pink: #f48fb1;
 }
 
 html, body {
@@ -19,131 +13,341 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-  background-color: var(--bg-color); /* 水色を強制 */
-  color: var(--text-main);
+  font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
+  overflow: hidden;
+  background-color: #263238;
 }
 
-/* --- 【最重要】地図エリア（#map）の設定 --- */
-#map {
-  width: 100%;
-  height: 100vh; /* スマホ・PC問わず画面いっぱいに表示 */
-  z-index: 1;    /* 地図を最背面に */
+.hidden {
+  display: none !important;
 }
 
-/* --- コンテンツエリア（地図の上に重ねる） --- */
-.content-layer {
+/* 本の表紙デザイン */
+.book-cover {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
-  z-index: 10;   /* 地図より前に表示 */
-  pointer-events: none; /* 下の地図を操作できるようにする */
+  background: linear-gradient(135deg, #ab47bc, #6a1b9a);
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
 }
 
-/* ヘッダー */
-header {
-  background-color: rgba(255, 255, 255, 0.9); /* 半透明の白 */
-  color: var(--primary-blue);
-  padding: 15px;
-  text-align: center;
-  border-bottom: 2px solid var(--primary-blue);
-  pointer-events: auto; /* 操作可能にする */
-  box-shadow: 0 4px 15px var(--shadow-color);
-}
-
-header h1 {
-  margin: 0;
-  font-size: 1.2rem;
-  letter-spacing: 1px;
-}
-
-/* ポップアップ（入力フォーム）の可愛いデザイン */
-.leaflet-popup-content-wrapper {
-  background-color: var(--panel-bg);
+.cover-content {
+  background: rgba(255, 255, 255, 0.1);
+  border: 4px double var(--cover-gold);
   border-radius: 20px;
-  box-shadow: 0 10px 30px var(--shadow-color);
-  padding: 10px;
+  padding: 40px 30px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
 }
 
-.leaflet-popup-content {
-  color: var(--text-main);
-  font-family: sans-serif;
-  font-size: 1rem;
-  line-height: 1.5;
+.cover-title {
+  color: var(--cover-gold);
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+  margin-bottom: 10px;
 }
 
-/* ポップアップ内の入力欄とボタン */
-.popup-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.popup-input {
-  padding: 8px;
-  border: 2px solid #e3f2fd;
-  border-radius: 10px;
+.cover-subtitle {
+  color: #f3e5f5;
   font-size: 0.9rem;
+  margin-bottom: 30px;
 }
 
-.popup-input:focus {
-  border-color: var(--primary-blue);
-  outline: none;
-}
-
-/* 可愛いボタン共通 */
-.btn {
+.open-book-btn {
+  background: var(--cover-gold);
+  color: #4a148c;
   border: none;
-  border-radius: 50px; /* 丸いボタン */
-  padding: 8px 15px;
-  font-size: 0.8rem;
+  border-radius: 25px;
+  padding: 12px 30px;
+  font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.3s ease;
-  pointer-events: auto; /* 操作可能にする */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  transition: transform 0.2s, background 0.2s;
 }
 
-.btn:active {
-  transform: translateY(1px);
+.open-book-btn:active {
+  transform: scale(0.95);
 }
 
-/* 水色ボタン */
-.btn-primary {
-  background-color: var(--primary-blue);
-  color: white;
+/* シール帳本体 */
+.sticker-book {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #e8dcc4;
+  display: flex;
+  flex-direction: column;
 }
 
-.btn-primary:hover {
-  background-color: var(--hover-blue);
-}
-
-/* ピンクボタン（追加） */
-.btn-accent {
-  background-color: var(--accent-pink);
-  color: white;
-  width: 50px;
+.book-bar {
   height: 50px;
-  border-radius: 50%;
-  font-size: 1.5rem;
+  background-color: var(--primary-blue);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 2;
+}
+
+.book-bar h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1565c0;
+}
+
+.nav-btn {
+  background: white;
+  border: none;
+  border-radius: 15px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.nav-btn.accent {
+  background: var(--accent-pink);
+  color: white;
+}
+
+.book-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  padding: 10px 10px 0;
+  box-sizing: border-box;
+}
+
+/* シール台紙（台紙＝厚紙っぽいページ） */
+.sticker-canvas {
+  flex: 1;
+  background-color: var(--paper-bg);
+  background-image:
+    /* ノート風のドット */
+    radial-gradient(#d8c9a3 8%, transparent 9%),
+    radial-gradient(#d8c9a3 8%, transparent 9%),
+    /* かすかな紙の繊維っぽい斜線ノイズ */
+    repeating-linear-gradient(115deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
+  background-size: 22px 22px, 22px 22px, auto;
+  background-position: 0 0, 11px 11px, 0 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px 14px 4px 4px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 -6px 10px -6px rgba(0,0,0,0.12) inset,
+    0 10px 0 -4px var(--paper-bg-dark),
+    0 14px 22px rgba(0,0,0,0.25);
+}
+
+/* ページの綴じ側（左端）にリング穴っぽい影を少し */
+.sticker-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06), transparent 18px);
+}
+
+.canvas-hint {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 5px 15px;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  color: #8d7b55;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+/* 貼られたシール（台紙上）：ツヤ・浮き上がり・白フチのダイカット風 */
+.placed-sticker {
+  position: absolute;
+  width: 74px;
+  height: 74px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 2.5rem;
+  line-height: 1;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #fbfbfb 45%, #f0f0f0 100%);
+  border: 3px solid #ffffff;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 -3px 5px rgba(0,0,0,0.08) inset,
+    0 3px 6px rgba(0,0,0,0.18),
+    0 9px 14px rgba(0,0,0,0.16);
+  transition: transform 0.12s ease;
 }
 
-.btn-accent:hover {
-  background-color: var(--hover-pink);
-  transform: scale(1.1);
-}
-
-/* フッター（追加ボタンを配置） */
-footer {
+/* ツヤ・光沢ハイライト */
+.placed-sticker::after {
+  content: '';
   position: absolute;
-  bottom: 30px;
-  right: 30px;
-  z-index: 20;
+  top: 8%;
+  left: 14%;
+  width: 50%;
+  height: 32%;
+  background: linear-gradient(120deg, rgba(255,255,255,0.9), rgba(255,255,255,0) 75%);
+  border-radius: 50%;
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+
+.placed-sticker:active {
+  transform: scale(1.15) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 -3px 5px rgba(0,0,0,0.08) inset,
+    0 6px 10px rgba(0,0,0,0.22),
+    0 14px 20px rgba(0,0,0,0.2);
+}
+
+/* 下部トレイ */
+.sticker-tray {
+  height: 116px;
+  background: #fffaf0;
+  border-top: 2px solid #e0d3ae;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 15px;
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.06);
+}
+
+.tray-title {
+  font-size: 0.75rem;
+  color: #a08b5f;
+  margin-bottom: 5px;
+}
+
+.tray-list {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  align-items: center;
+  height: 100%;
+}
+
+.tray-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  cursor: grab;
+  user-select: none;
+}
+
+.tray-item .icon {
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #fbfbfb 45%, #f0f0f0 100%);
+  border: 2px solid #ffffff;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 2px 4px rgba(0,0,0,0.15),
+    0 4px 8px rgba(0,0,0,0.1);
+}
+
+.tray-item .name {
+  font-size: 0.65rem;
+  color: var(--text-main);
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* 未獲得＝台紙から「剥がした跡」のような表現 */
+.tray-item.locked {
+  cursor: not-allowed;
+}
+
+.tray-item.locked .icon {
+  background: var(--paper-bg-dark);
+  border: 2px dashed #c3b083;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.12),
+    inset 0 -1px 0 rgba(255,255,255,0.4);
+  color: #b8a374;
+  font-size: 1.1rem;
+}
+
+.tray-item.locked .name {
+  color: #b0a074;
+}
+
+/* マップモーダル */
+.map-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+.map-modal-header {
+  height: 45px;
+  background: #37474f;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  font-size: 0.9rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+#map {
+  flex: 1;
+  width: 100%;
+}
+
+.get-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-top: 5px;
+  font-size: 0.75rem;
 }
