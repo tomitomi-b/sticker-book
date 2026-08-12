@@ -10,7 +10,7 @@
   <meta http-equiv="Expires" content="0">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-  <link rel="stylesheet" href="./style-new.css?v=200">
+  <link rel="stylesheet" href="./style-new.css?v=201">
 </head>
 <body>
 
@@ -37,18 +37,20 @@
       <button id="map-toggle-btn" class="nav-btn accent">🗺️ スポットマップ</button>
     </div>
 
-    <!-- 見開きノート台紙 -->
-    <div class="book-body">
-      <div id="sticker-canvas" class="sticker-canvas">
-        <div class="ring-spine"></div>
-        <div class="canvas-hint">集めたシールをドラッグ＆ドロップで貼れるよ！</div>
+    <!-- 3D ページめくり用コンテナ -->
+    <div class="book-viewport">
+      <div class="book-body">
+        <div id="sticker-canvas" class="sticker-canvas">
+          <div class="ring-spine"></div>
+          <div class="canvas-hint">集めたシールをドラッグ＆ドロップ！左右スワイプでページめくり 👈👉</div>
+        </div>
       </div>
+    </div>
 
-      <!-- 下部トレイ -->
-      <div class="sticker-tray">
-        <div class="tray-title">集めたシール (タップまたはドラッグで移動)</div>
-        <div id="tray-list" class="tray-list"></div>
-      </div>
+    <!-- 下部トレイ -->
+    <div class="sticker-tray">
+      <div class="tray-title">集めたシール (タップまたはドラッグで移動)</div>
+      <div id="tray-list" class="tray-list"></div>
     </div>
   </div>
 
@@ -62,6 +64,6 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="./app.js?v=200"></script>
+  <script src="./app.js?v=201"></script>
 </body>
 </html>

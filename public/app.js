@@ -41,12 +41,15 @@ const STORAGE_KEY_UNLOCKED = 'sticker_book_unlocked';
 const STORAGE_KEY_PLACED_PAGE = 'sticker_book_placed_page_';
 
 let unlockedStickers = [];
-let pageStickers = {}; // ページごとのシールデータ { 1: [], 2: [], 3: [] }
+let pageStickers = {}; 
 let map = null;
+
+let isTurningPage = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
   setupEvents();
+  setupSwipeEvents();
   renderTray();
   renderCanvas();
   updatePageDisplay();
@@ -92,7 +95,6 @@ function setupEvents() {
   const mapModal = document.getElementById('map-modal');
   const closeMapBtn = document.getElementById('close-map-btn');
 
-  // 表紙を開く
   if (openBtn) {
     openBtn.addEventListener('click', () => {
       bookCover.classList.add('opened');
@@ -103,7 +105,6 @@ function setupEvents() {
     });
   }
 
-  // 表紙へ閉じる
   if (closeBtn) {
     closeBtn.addEventListener('click', () => {
       bookCover.classList.remove('hidden');
@@ -114,11 +115,10 @@ function setupEvents() {
     });
   }
 
-  // ページ切り替え
   if (prevBtn) {
     prevBtn.addEventListener('click', () => {
       if (currentPage > 1) {
-        changePage(currentPage - 1);
+        changePage(currentPage - 1, 'prev');
       }
     });
   }
@@ -126,7 +126,7 @@ function setupEvents() {
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
       if (currentPage < TOTAL_PAGES) {
-        changePage(currentPage + 1);
+        changePage(currentPage + 1, 'next');
       }
     });
   }
@@ -145,17 +145,78 @@ function setupEvents() {
   }
 }
 
-function changePage(newPage) {
+// 指（フリック／スワイプ）によるページめくり判定
+function setupSwipeEvents() {
   const canvas = document.getElementById('sticker-canvas');
-  canvas.style.opacity = '0.2';
-  
+  if (!canvas) return;
+
+  let startX = 0;
+  let startY = 0;
+  let isSwiping = false;
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.target.classList.contains('placed-sticker')) return; // シール操作時はめくらない
+    startX = e.clientX;
+    startY = e.clientY;
+    isSwiping = true;
+  });
+
+  canvas.addEventListener('pointerup', (e) => {
+    if (!isSwiping) return;
+    isSwiping = false;
+
+    const diffX = e.clientX - startX;
+    const diffY = e.clientY - startY;
+
+    // 横方向の一定以上のスワイプ（縦移動より大きい場合）
+    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX < 0 && currentPage < TOTAL_PAGES) {
+        // 左スワイプ → 次のページへ
+        changePage(currentPage + 1, 'next');
+      } else if (diffX > 0 && currentPage > 1) {
+        // 右スワイプ → 前のページへ
+        changePage(currentPage - 1, 'prev');
+      }
+    }
+  });
+
+  canvas.addEventListener('pointercancel', () => {
+    isSwiping = false;
+  });
+}
+
+// 3D ページめくりアニメーション付きのページ変更
+function changePage(newPage, direction) {
+  if (isTurningPage) return;
+  isTurningPage = true;
+
+  const canvas = document.getElementById('sticker-canvas');
+
+  // 退出アニメーション
+  const exitClass = direction === 'next' ? 'turn-next' : 'turn-prev';
+  const enterClass = direction === 'next' ? 'turn-enter-next' : 'turn-enter-prev';
+
+  canvas.classList.add(exitClass);
+
   setTimeout(() => {
     currentPage = newPage;
     updatePageDisplay();
     renderCanvas();
     renderTray();
-    canvas.style.opacity = '1';
-  }, 150);
+
+    canvas.classList.remove(exitClass);
+    canvas.classList.add(enterClass);
+
+    // 進入アニメーションの適用
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        canvas.classList.remove(enterClass);
+        setTimeout(() => {
+          isTurningPage = false;
+        }, 400);
+      }, 50);
+    });
+  }, 350);
 }
 
 function updatePageDisplay() {
@@ -165,7 +226,6 @@ function updatePageDisplay() {
   }
 }
 
-// すべてのページを通して全シールの中で何枚貼られているか確認
 function isStickerPlacedAnywhere(stickerId) {
   for (let p = 1; p <= TOTAL_PAGES; p++) {
     if (pageStickers[p].some(s => s.id === stickerId)) {
