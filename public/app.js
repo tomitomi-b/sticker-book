@@ -101,14 +101,15 @@ document.addEventListener('DOMContentLoaded', () => {
       myStickers.push(spot.id);
       localStorage.setItem('my_stickers', JSON.stringify(myStickers));
 
-      // 初期配置として台紙の中央付近に貼る（手貼り感を出すためランダムな角度をつける）
+      // 初期配置として台紙の中央付近に貼る（手貼り感を出すためランダムな角度・大きさをつける）
       placedStickers.push({
         instanceId: Date.now().toString(),
         spotId: spot.id,
         icon: spot.icon,
         x: 50 + (placedStickers.length * 15),
         y: 100 + (placedStickers.length * 15),
-        rotation: Math.round((Math.random() * 24 - 12) * 10) / 10
+        rotation: Math.round((Math.random() * 24 - 12) * 10) / 10,
+        size: Math.round((2.2 + Math.random() * 1.8) * 10) / 10 // 2.2rem〜4.0remの範囲でばらつかせる
       });
       localStorage.setItem('placed_stickers', JSON.stringify(placedStickers));
 
@@ -146,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.left = `${st.x}px`;
       el.style.top = `${st.y}px`;
       el.style.transform = `rotate(${st.rotation || 0}deg)`;
+      el.style.fontSize = `${st.size || 3}rem`;
 
       makeDraggable(el, st.instanceId);
       canvas.appendChild(el);

@@ -180,52 +180,32 @@ html, body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
-/* 貼られたシール（台紙上）：ツヤ・浮き上がり・白フチのダイカット風 */
+/* 貼られたシール（台紙上）：絵柄の形そのままの白フチ（ダイカット風）＋ツヤ・浮き上がり */
 .placed-sticker {
   position: absolute;
-  width: 74px;
-  height: 74px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
+  display: inline-block;
+  font-size: var(--sticker-size, 3rem);
   line-height: 1;
   cursor: move;
   user-select: none;
   touch-action: none;
-  box-sizing: border-box;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #fbfbfb 45%, #f0f0f0 100%);
-  border: 3px solid #ffffff;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 -3px 5px rgba(0,0,0,0.08) inset,
-    0 3px 6px rgba(0,0,0,0.18),
-    0 9px 14px rgba(0,0,0,0.16);
+  /* 白フチを四方＋斜め方向に重ねて絵柄の輪郭に沿ったダイカット風の縁取りを作る */
+  filter:
+    drop-shadow(1.5px 0 0 #fff)
+    drop-shadow(-1.5px 0 0 #fff)
+    drop-shadow(0 1.5px 0 #fff)
+    drop-shadow(0 -1.5px 0 #fff)
+    drop-shadow(1.5px 1.5px 0 #fff)
+    drop-shadow(-1.5px 1.5px 0 #fff)
+    drop-shadow(1.5px -1.5px 0 #fff)
+    drop-shadow(-1.5px -1.5px 0 #fff)
+    drop-shadow(0 4px 3px rgba(0,0,0,0.22))
+    drop-shadow(0 8px 8px rgba(0,0,0,0.16));
   transition: transform 0.12s ease;
-}
-
-/* ツヤ・光沢ハイライト */
-.placed-sticker::after {
-  content: '';
-  position: absolute;
-  top: 8%;
-  left: 14%;
-  width: 50%;
-  height: 32%;
-  background: linear-gradient(120deg, rgba(255,255,255,0.9), rgba(255,255,255,0) 75%);
-  border-radius: 50%;
-  transform: rotate(-18deg);
-  pointer-events: none;
 }
 
 .placed-sticker:active {
   transform: scale(1.15) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 -3px 5px rgba(0,0,0,0.08) inset,
-    0 6px 10px rgba(0,0,0,0.22),
-    0 14px 20px rgba(0,0,0,0.2);
 }
 
 /* 下部トレイ */
