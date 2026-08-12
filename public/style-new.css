@@ -177,28 +177,28 @@ html, body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
-/* 貼られたシール：絵柄ダイカット型 ＋ 超ぷっくりボンボンドロップ質感 */
+/* 貼られたシール：絵柄の輪郭にピッタリ沿ったダイカット＋極厚ドーム光沢 */
 .placed-sticker {
   position: absolute;
   display: inline-block;
-  font-size: var(--sticker-size, 3.8rem);
+  font-size: 4.2rem;
   line-height: 1;
   cursor: move;
   user-select: none;
   -webkit-user-drag: none;
   touch-action: none;
-  background: none !important;
+  background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   width: auto !important;
   height: auto !important;
 
-  /* イラストの輪郭にピッタリ密着する白フチ & 厚手ドーム光沢影 */
+  /* 多重drop-shadowでイラストの輪郭にのみピッタリ密着する厚手白フチと膨らみ影を再現 */
   filter:
-    /* 1. 上部のツヤ・光線ハイライト */
+    /* 1. 上部の鋭い光沢ハイライト */
     drop-shadow(0 -4px 1.5px rgba(255, 255, 255, 0.95))
-    /* 2. 輪郭に沿った厚みのあるダイカット白フチ */
+    /* 2. イラストの形そのままに密着するダイカット白フチ */
     drop-shadow(4px 0 0 #ffffff)
     drop-shadow(-4px 0 0 #ffffff)
     drop-shadow(0 4px 0 #ffffff)
@@ -207,7 +207,7 @@ html, body {
     drop-shadow(-3px 3px 0 #ffffff)
     drop-shadow(3px -3px 0 #ffffff)
     drop-shadow(-3px -3px 0 #ffffff)
-    /* 3. 樹脂層のふくらみ影 */
+    /* 3. 樹脂の丸み・立体感影 */
     drop-shadow(0 5px 3px rgba(0, 0, 0, 0.28))
     /* 4. 接地感を生む立体影 */
     drop-shadow(0 12px 10px rgba(0, 0, 0, 0.32));
