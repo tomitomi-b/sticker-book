@@ -37,6 +37,7 @@ const STICKERS = [
 // ストレージキー
 const STORAGE_KEY_UNLOCKED = 'sticker_book_unlocked';
 const STORAGE_KEY_PLACED = 'sticker_book_placed_v3';
+const STORAGE_KEY_THEME = 'sticker_book_theme';
 
 let unlockedStickers = [];
 let placedStickers = [];
@@ -69,6 +70,10 @@ function loadData() {
       { id: 'tokyo-station', x: 55, y: 42 }
     ];
   }
+
+  // テーマ適用
+  const savedTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'default';
+  document.body.setAttribute('data-theme', savedTheme);
 }
 
 function saveData() {
@@ -76,7 +81,7 @@ function saveData() {
   localStorage.setItem(STORAGE_KEY_PLACED, JSON.stringify(placedStickers));
 }
 
-// イベント設定（HTMLのIDと完全一致）
+// イベント設定
 function setupEvents() {
   const bookCover = document.getElementById('book-cover');
   const stickerBook = document.getElementById('sticker-book');
@@ -86,19 +91,25 @@ function setupEvents() {
   const mapModal = document.getElementById('map-modal');
   const closeMapBtn = document.getElementById('close-map-btn');
 
-  // 「シール帳をひらく」ボタン
+  // 「シール帳をひらく」ボタン：パタッと表紙を開くアニメーション
   if (openBtn) {
     openBtn.addEventListener('click', () => {
-      bookCover.classList.add('hidden');
-      stickerBook.classList.remove('hidden');
+      bookCover.classList.add('opened');
+      setTimeout(() => {
+        bookCover.classList.add('hidden');
+        stickerBook.classList.remove('hidden');
+      }, 500);
     });
   }
 
-  // 「← 表紙へ」ボタン
+  // 「← 表紙へ」ボタン：表紙を閉じるアニメーション
   if (closeBtn) {
     closeBtn.addEventListener('click', () => {
-      stickerBook.classList.add('hidden');
       bookCover.classList.remove('hidden');
+      setTimeout(() => {
+        bookCover.classList.remove('opened');
+        stickerBook.classList.add('hidden');
+      }, 50);
     });
   }
 
@@ -118,7 +129,7 @@ function setupEvents() {
   }
 }
 
-// 下部トレイ描画（1枚のみ制限適用）
+// 下部トレイ描画
 function renderTray() {
   const trayList = document.getElementById('tray-list');
   if (!trayList) return;
@@ -137,7 +148,6 @@ function renderTray() {
         <div class="name">${sticker.name}</div>
       `;
 
-      // タップで台紙に追加（まだ貼られていない場合のみ1枚だけ追加）
       item.addEventListener('pointerdown', (e) => {
         if (placedStickers.some(p => p.id === sticker.id)) return;
         
