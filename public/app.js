@@ -1,280 +1,183 @@
-// シールデータ定義
-const STICKERS = [
-  {
-    id: 'tokyo-station',
-    name: '東京駅限定シール',
-    emoji: '🏯',
-    lat: 35.681236,
-    lng: 139.767125,
-    description: '東京駅周辺でゲットできる限定シール！'
-  },
-  {
-    id: 'shinjuku-tower',
-    name: '新宿タワーシール',
-    emoji: '🗼',
-    lat: 35.6895,
-    lng: 139.6917,
-    description: '新宿エリア限定のタワーシール！'
-  }
+// シール帳アプリの主要ロジック
+
+// 収集済みシールデータ
+const ALL_STICKERS = [
+  { id: 'tokyo-station', name: '東京駅限定シール', icon: '🏯', unlocked: true },
+  { id: 'shinjuku-tower', name: '新宿タワーシール', icon: '🗼', unlocked: true },
+  { id: 'shibuya-dog', name: '渋谷ハチ公シール', icon: '🐕', unlocked: false, lat: 35.6591, lng: 139.7006 },
+  { id: 'skytree', name: 'スカイツリーシール', icon: '🏙️', unlocked: false, lat: 35.7101, lng: 139.8107 }
 ];
 
-// ローカルストレージキー
-const STORAGE_KEY_UNLOCKED = 'sticker_book_unlocked';
-const STORAGE_KEY_PLACED = 'sticker_book_placed_v2';
-
-let unlockedStickers = [];
+// 台紙上に置かれているシール（1種類につき最大1個）
+// 形式: { stickerId: string, x: number, y: number }
 let placedStickers = [];
-let map = null;
 
-// 初期化
 document.addEventListener('DOMContentLoaded', () => {
-  loadData();
-  setupEvents();
+  initUI();
   renderTray();
   renderCanvas();
 });
 
-// データ読み込み
-function loadData() {
-  const savedUnlocked = localStorage.getItem(STORAGE_KEY_UNLOCKED);
-  if (savedUnlocked) {
-    unlockedStickers = JSON.parse(savedUnlocked);
-  } else {
-    // 初回デフォルト：東京駅と新宿を解放
-    unlockedStickers = ['tokyo-station', 'shinjuku-tower'];
-    saveData();
-  }
-
-  const savedPlaced = localStorage.getItem(STORAGE_KEY_PLACED);
-  if (savedPlaced) {
-    placedStickers = JSON.parse(savedPlaced);
-  } else {
-    // 初回デフォルト配置（丸型枠なし）
-    placedStickers = [
-      { id: 'shinjuku-tower', x: 35, y: 35, instanceId: 'init-1' },
-      { id: 'tokyo-station', x: 55, y: 42, instanceId: 'init-2' }
-    ];
-  }
-}
-
-function saveData() {
-  localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedStickers));
-  localStorage.setItem(STORAGE_KEY_PLACED, JSON.stringify(placedStickers));
-}
-
-// イベント設定
-function setupEvents() {
-  const bookCover = document.getElementById('book-cover');
-  const stickerBook = document.getElementById('sticker-book');
+function initUI() {
   const openBtn = document.getElementById('open-book-btn');
-  const closeBtn = document.getElementById('close-book-btn');
-  const mapToggleBtn = document.getElementById('map-toggle-btn');
+  const cover = document.getElementById('book-cover');
+  const book = document.getElementById('sticker-book');
+  const mapBtn = document.getElementById('spot-map-btn');
   const mapModal = document.getElementById('map-modal');
   const closeMapBtn = document.getElementById('close-map-btn');
 
-  openBtn.addEventListener('click', () => {
-    bookCover.classList.add('hidden');
-    stickerBook.classList.remove('hidden');
-  });
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      cover.classList.add('hidden');
+      book.classList.remove('hidden');
+    });
+  }
 
-  closeBtn.addEventListener('click', () => {
-    stickerBook.classList.add('hidden');
-    bookCover.classList.remove('hidden');
-  });
+  if (mapBtn) {
+    mapBtn.addEventListener('click', () => {
+      mapModal.classList.remove('hidden');
+    });
+  }
 
-  mapToggleBtn.addEventListener('click', () => {
-    mapModal.classList.remove('hidden');
-    initMap();
-  });
-
-  closeMapBtn.addEventListener('click', () => {
-    mapModal.classList.add('hidden');
-  });
-
-  // ドロップ受け入れ
-  const canvas = document.getElementById('sticker-canvas');
-  canvas.addEventListener('dragover', (e) => e.preventDefault());
-  canvas.addEventListener('drop', handleDropOnCanvas);
+  if (closeMapBtn) {
+    closeMapBtn.addEventListener('click', () => {
+      mapModal.classList.add('hidden');
+    });
+  }
 }
 
 // トレイの描画
 function renderTray() {
   const trayList = document.getElementById('tray-list');
+  if (!trayList) return;
   trayList.innerHTML = '';
 
-  STICKERS.forEach(sticker => {
-    const isUnlocked = unlockedStickers.includes(sticker.id);
+  ALL_STICKERS.forEach((sticker) => {
     const item = document.createElement('div');
-    item.className = `tray-item ${isUnlocked ? '' : 'locked'}`;
+    item.className = 'tray-item';
 
-    if (isUnlocked) {
-      item.draggable = true;
+    const isPlaced = placedStickers.some(p => p.stickerId === sticker.id);
+
+    if (!sticker.unlocked) {
+      item.classList.add('locked');
       item.innerHTML = `
-        <div class="icon">${sticker.emoji}</div>
+        <div class="icon">🔒</div>
         <div class="name">${sticker.name}</div>
       `;
-      item.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', sticker.id);
-      });
     } else {
+      if (isPlaced) {
+        item.classList.add('placed-already');
+      }
       item.innerHTML = `
-        <div class="icon">?</div>
-        <div class="name">未獲得</div>
+        <div class="icon">${sticker.icon}</div>
+        <div class="name">${sticker.name}</div>
       `;
+
+      // ドラッグ/タッチイベント
+      setupTrayDrag(item, sticker);
     }
 
     trayList.appendChild(item);
   });
 }
 
-// キャンバス（シール帳面）の描画：丸枠無しのダイカット構成
+// トレイからのドラッグ処理（1枚のみ許可）
+function setupTrayDrag(element, sticker) {
+  element.addEventListener('pointerdown', (e) => {
+    // すでに台紙に貼られている場合は新たに追加させない
+    const isPlaced = placedStickers.some(p => p.stickerId === sticker.id);
+    if (isPlaced) return;
+
+    e.preventDefault();
+    const canvas = document.getElementById('sticker-canvas');
+    const rect = canvas.getBoundingClientRect();
+
+    // 台紙の中央付近に新しく配置
+    const x = e.clientX - rect.left - 30;
+    const y = e.clientY - rect.top - 30;
+
+    placedStickers.push({
+      stickerId: sticker.id,
+      x: Math.max(10, Math.min(rect.width - 70, x)),
+      y: Math.max(10, Math.min(rect.height - 70, y))
+    });
+
+    renderCanvas();
+    renderTray();
+  });
+}
+
+// 台紙上のシールを描画
 function renderCanvas() {
   const canvas = document.getElementById('sticker-canvas');
-  // 既存の貼られたシールのみ削除（ヒントテキストは維持）
+  if (!canvas) return;
+
+  // ヒントテキスト以外を消去
   const existingStickers = canvas.querySelectorAll('.placed-sticker');
   existingStickers.forEach(el => el.remove());
 
-  placedStickers.forEach((item) => {
-    const stickerData = STICKERS.find(s => s.id === item.id);
+  placedStickers.forEach((placed, index) => {
+    const stickerData = ALL_STICKERS.find(s => s.id === placed.stickerId);
     if (!stickerData) return;
 
     const el = document.createElement('div');
     el.className = 'placed-sticker';
-    el.dataset.instanceId = item.instanceId;
-    el.style.left = `${item.x}%`;
-    el.style.top = `${item.y}%`;
-    
-    // 丸枠タグを含めず、絵柄絵文字テキストのみを直接挿入
-    el.textContent = stickerData.emoji;
+    el.textContent = stickerData.icon;
+    el.style.left = `${placed.x}px`;
+    el.style.top = `${placed.y}px`;
 
-    // ドラッグ移動処理
-    makeDraggable(el, item.instanceId);
+    // 台紙上での自由な移動ドラッグ
+    setupCanvasStickerDrag(el, index, canvas);
 
     canvas.appendChild(el);
   });
 }
 
-// ドロップ処理
-function handleDropOnCanvas(e) {
-  e.preventDefault();
-  const stickerId = e.dataTransfer.getData('text/plain');
-  if (!stickerId) return;
-
-  const canvas = document.getElementById('sticker-canvas');
-  const rect = canvas.getBoundingClientRect();
-
-  const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
-  const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
-
-  const newInstance = {
-    id: stickerId,
-    x: Math.max(2, Math.min(90, xPercent)),
-    y: Math.max(2, Math.min(90, yPercent)),
-    instanceId: 'st-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4)
-  };
-
-  placedStickers.push(newInstance);
-  saveData();
-  renderCanvas();
-}
-
-// シール移動ドラッグ設定
-function makeDraggable(el, instanceId) {
+// 台紙上でのシール移動
+function setupCanvasStickerDrag(element, index, canvas) {
   let isDragging = false;
-  let startX, startY, startLeft, startTop;
+  let startX = 0;
+  let startY = 0;
+  let initialX = 0;
+  let initialY = 0;
 
-  const onPointerDown = (e) => {
+  element.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     isDragging = true;
-    startX = e.clientX || (e.touches && e.touches[0].clientX);
-    startY = e.clientY || (e.touches && e.touches[0].clientY);
+    element.setPointerCapture(e.pointerId);
 
-    const canvas = document.getElementById('sticker-canvas');
-    const canvasRect = canvas.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    initialX = placedStickers[index].x;
+    initialY = placedStickers[index].y;
+  });
 
-    const targetItem = placedStickers.find(p => p.instanceId === instanceId);
-    if (targetItem) {
-      startLeft = (targetItem.x / 100) * canvasRect.width;
-      startTop = (targetItem.y / 100) * canvasRect.height;
-    }
-
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-  };
-
-  const onPointerMove = (e) => {
+  element.addEventListener('pointermove', (e) => {
     if (!isDragging) return;
-    const currentX = e.clientX || (e.touches && e.touches[0].clientX);
-    const currentY = e.clientY || (e.touches && e.touches[0].clientY);
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
 
-    const dx = currentX - startX;
-    const dy = currentY - startY;
-
-    const canvas = document.getElementById('sticker-canvas');
     const canvasRect = canvas.getBoundingClientRect();
+    const newX = Math.max(0, Math.min(canvasRect.width - 60, initialX + dx));
+    const newY = Math.max(0, Math.min(canvasRect.height - 60, initialY + dy));
 
-    let newX = ((startLeft + dx) / canvasRect.width) * 100;
-    let newY = ((startTop + dy) / canvasRect.height) * 100;
+    placedStickers[index].x = newX;
+    placedStickers[index].y = newY;
 
-    newX = Math.max(0, Math.min(92, newX));
-    newY = Math.max(0, Math.min(92, newY));
+    element.style.left = `${newX}px`;
+    element.style.top = `${newY}px`;
+  });
 
-    el.style.left = `${newX}%`;
-    el.style.top = `${newY}%`;
-
-    const targetItem = placedStickers.find(p => p.instanceId === instanceId);
-    if (targetItem) {
-      targetItem.x = newX;
-      targetItem.y = newY;
-    }
-  };
-
-  const onPointerUp = () => {
+  const endDrag = (e) => {
     if (isDragging) {
       isDragging = false;
-      saveData();
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
+      try {
+        element.releasePointerCapture(e.pointerId);
+      } catch (err) {}
     }
   };
 
-  el.addEventListener('pointerdown', onPointerDown);
-}
-
-// マップ初期化
-function initMap() {
-  if (map) return;
-
-  map = L.map('map').setView([35.681236, 139.767125], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
-
-  STICKERS.forEach(sticker => {
-    const isUnlocked = unlockedStickers.includes(sticker.id);
-    const marker = L.marker([sticker.lat, sticker.lng]).addTo(map);
-
-    const popupContent = document.createElement('div');
-    popupContent.innerHTML = `
-      <b>${sticker.name}</b><br>
-      <p style="margin: 4px 0;">${sticker.description}</p>
-      ${isUnlocked ? '<span style="color: green;">✓ 獲得済み</span>' : `<button class="get-btn" id="btn-${sticker.id}">シールをゲット！</button>`}
-    `;
-
-    marker.bindPopup(popupContent);
-
-    marker.on('popupopen', () => {
-      const btn = document.getElementById(`btn-${sticker.id}`);
-      if (btn) {
-        btn.addEventListener('click', () => {
-          if (!unlockedStickers.includes(sticker.id)) {
-            unlockedStickers.push(sticker.id);
-            saveData();
-            renderTray();
-            alert(`「${sticker.name}」を獲得しました！`);
-            map.closePopup();
-          }
-        });
-      }
-    });
-  });
+  element.addEventListener('pointerup', endDrag);
+  element.addEventListener('pointercancel', endDrag);
 }
