@@ -56,31 +56,41 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadData() {
-  const savedUnlocked = localStorage.getItem(STORAGE_KEY_UNLOCKED);
-  if (savedUnlocked) {
-    unlockedStickers = JSON.parse(savedUnlocked);
-  } else {
-    unlockedStickers = ['tokyo-station', 'shinjuku-tower'];
-    saveData();
-  }
-
-  for (let p = 1; p <= TOTAL_PAGES; p++) {
-    const saved = localStorage.getItem(STORAGE_KEY_PLACED_PAGE + p);
-    if (saved) {
-      pageStickers[p] = JSON.parse(saved);
+  try {
+    const savedUnlocked = localStorage.getItem(STORAGE_KEY_UNLOCKED);
+    if (savedUnlocked) {
+      unlockedStickers = JSON.parse(savedUnlocked);
     } else {
-      pageStickers[p] = (p === 1) ? [
-        { id: 'shinjuku-tower', x: 25, y: 35 },
-        { id: 'tokyo-station', x: 65, y: 42 }
-      ] : [];
+      unlockedStickers = ['tokyo-station', 'shinjuku-tower'];
+      saveData();
     }
+
+    for (let p = 1; p <= TOTAL_PAGES; p++) {
+      const saved = localStorage.getItem(STORAGE_KEY_PLACED_PAGE + p);
+      if (saved) {
+        pageStickers[p] = JSON.parse(saved);
+      } else {
+        pageStickers[p] = (p === 1) ? [
+          { id: 'shinjuku-tower', x: 25, y: 35 },
+          { id: 'tokyo-station', x: 65, y: 42 }
+        ] : [];
+      }
+    }
+  } catch (e) {
+    console.error('LocalStorage load error:', e);
+    unlockedStickers = ['tokyo-station', 'shinjuku-tower'];
+    pageStickers = { 1: [{ id: 'shinjuku-tower', x: 25, y: 35 }], 2: [], 3: [] };
   }
 }
 
 function saveData() {
-  localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedStickers));
-  for (let p = 1; p <= TOTAL_PAGES; p++) {
-    localStorage.setItem(STORAGE_KEY_PLACED_PAGE + p, JSON.stringify(pageStickers[p]));
+  try {
+    localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedStickers));
+    for (let p = 1; p <= TOTAL_PAGES; p++) {
+      localStorage.setItem(STORAGE_KEY_PLACED_PAGE + p, JSON.stringify(pageStickers[p] || []));
+    }
+  } catch (e) {
+    console.error('LocalStorage save error:', e);
   }
 }
 
@@ -95,26 +105,23 @@ function setupEvents() {
   const mapModal = document.getElementById('map-modal');
   const closeMapBtn = document.getElementById('close-map-btn');
 
+  // 表紙を開くボタン
   if (openBtn) {
     openBtn.addEventListener('click', () => {
-      bookCover.classList.add('opened');
-      setTimeout(() => {
-        bookCover.classList.add('hidden');
-        stickerBook.classList.remove('hidden');
-      }, 500);
+      if (bookCover) bookCover.style.display = 'none';
+      if (stickerBook) stickerBook.classList.remove('hidden');
     });
   }
 
+  // 表紙に戻るボタン
   if (closeBtn) {
     closeBtn.addEventListener('click', () => {
-      bookCover.classList.remove('hidden');
-      setTimeout(() => {
-        bookCover.classList.remove('opened');
-        stickerBook.classList.add('hidden');
-      }, 50);
+      if (bookCover) bookCover.style.display = 'flex';
+      if (stickerBook) stickerBook.classList.add('hidden');
     });
   }
 
+  // 前のページボタン
   if (prevBtn) {
     prevBtn.addEventListener('click', () => {
       if (currentPage > 1) {
@@ -123,6 +130,7 @@ function setupEvents() {
     });
   }
 
+  // 次のページボタン
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
       if (currentPage < TOTAL_PAGES) {
@@ -131,21 +139,25 @@ function setupEvents() {
     });
   }
 
+  // マップボタン
   if (mapToggleBtn) {
     mapToggleBtn.addEventListener('click', () => {
-      mapModal.classList.remove('hidden');
-      initMap();
+      if (mapModal) {
+        mapModal.classList.remove('hidden');
+        initMap();
+      }
     });
   }
 
+  // マップ閉じるボタン
   if (closeMapBtn) {
     closeMapBtn.addEventListener('click', () => {
-      mapModal.classList.add('hidden');
+      if (mapModal) mapModal.classList.add('hidden');
     });
   }
 }
 
-// 指（フリック／スワイプ）によるページめくり判定
+// スワイプ／フリック操作によるページめくり
 function setupSwipeEvents() {
   const canvas = document.getElementById('sticker-canvas');
   if (!canvas) return;
@@ -155,7 +167,7 @@ function setupSwipeEvents() {
   let isSwiping = false;
 
   canvas.addEventListener('pointerdown', (e) => {
-    if (e.target.classList.contains('placed-sticker')) return; // シール操作時はめくらない
+    if (e.target.classList.contains('placed-sticker')) return;
     startX = e.clientX;
     startY = e.clientY;
     isSwiping = true;
@@ -168,13 +180,10 @@ function setupSwipeEvents() {
     const diffX = e.clientX - startX;
     const diffY = e.clientY - startY;
 
-    // 横方向の一定以上のスワイプ（縦移動より大きい場合）
     if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
       if (diffX < 0 && currentPage < TOTAL_PAGES) {
-        // 左スワイプ → 次のページへ
         changePage(currentPage + 1, 'next');
       } else if (diffX > 0 && currentPage > 1) {
-        // 右スワイプ → 前のページへ
         changePage(currentPage - 1, 'prev');
       }
     }
@@ -185,14 +194,22 @@ function setupSwipeEvents() {
   });
 }
 
-// 3D ページめくりアニメーション付きのページ変更
+// ページ切り替えアニメーション処理
 function changePage(newPage, direction) {
   if (isTurningPage) return;
   isTurningPage = true;
 
   const canvas = document.getElementById('sticker-canvas');
 
-  // 退出アニメーション
+  if (!canvas) {
+    currentPage = newPage;
+    updatePageDisplay();
+    renderCanvas();
+    renderTray();
+    isTurningPage = false;
+    return;
+  }
+
   const exitClass = direction === 'next' ? 'turn-next' : 'turn-prev';
   const enterClass = direction === 'next' ? 'turn-enter-next' : 'turn-enter-prev';
 
@@ -207,16 +224,15 @@ function changePage(newPage, direction) {
     canvas.classList.remove(exitClass);
     canvas.classList.add(enterClass);
 
-    // 進入アニメーションの適用
     requestAnimationFrame(() => {
       setTimeout(() => {
         canvas.classList.remove(enterClass);
         setTimeout(() => {
           isTurningPage = false;
-        }, 400);
+        }, 300);
       }, 50);
     });
-  }, 350);
+  }, 300);
 }
 
 function updatePageDisplay() {
@@ -228,7 +244,7 @@ function updatePageDisplay() {
 
 function isStickerPlacedAnywhere(stickerId) {
   for (let p = 1; p <= TOTAL_PAGES; p++) {
-    if (pageStickers[p].some(s => s.id === stickerId)) {
+    if (pageStickers[p] && pageStickers[p].some(s => s.id === stickerId)) {
       return true;
     }
   }
@@ -253,9 +269,13 @@ function renderTray() {
         <div class="name">${sticker.name}</div>
       `;
 
-      item.addEventListener('pointerdown', (e) => {
+      item.addEventListener('pointerdown', () => {
         if (isStickerPlacedAnywhere(sticker.id)) return;
-        
+
+        if (!pageStickers[currentPage]) {
+          pageStickers[currentPage] = [];
+        }
+
         pageStickers[currentPage].push({
           id: sticker.id,
           x: 40 + (Math.random() * 10 - 5),
@@ -333,8 +353,10 @@ function makeDraggable(el, index, canvas) {
     el.style.left = `${newX}%`;
     el.style.top = `${newY}%`;
 
-    pageStickers[currentPage][index].x = newX;
-    pageStickers[currentPage][index].y = newY;
+    if (pageStickers[currentPage] && pageStickers[currentPage][index]) {
+      pageStickers[currentPage][index].x = newX;
+      pageStickers[currentPage][index].y = newY;
+    }
   };
 
   const onPointerUp = (e) => {
@@ -358,6 +380,8 @@ function initMap() {
     map.invalidateSize();
     return;
   }
+
+  if (typeof L === 'undefined') return;
 
   map = L.map('map').setView([35.681236, 139.767125], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
