@@ -33,16 +33,52 @@ body {
   pointer-events: none;
 }
 
-.binder-container {
+/* 3D空間の基準 */
+.book-viewport {
+  perspective: 1600px;
+}
+
+/* 本のベース（開いたとき見え隠れする土台） */
+.book-base {
   position: relative;
   width: 420px;
   height: 620px;
+  background: #1e0836;
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+}
+
+.inner-page {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 380px;
+  height: 590px;
+  background: #fdfbfb;
+  border-radius: 8px 16px 16px 8px;
+  box-sizing: border-box;
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #555;
+  font-weight: bold;
+  letter-spacing: 2px;
+  box-shadow: inset 5px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 表紙（左軸で回転するように設定） */
+.binder-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: linear-gradient(135deg, #4d126b 0%, #7e2682 40%, #240046 100%);
   border-radius: 24px;
   box-shadow: 
     0 20px 50px rgba(0, 0, 0, 0.6),
-    inset 0 0 15px rgba(255, 255, 255, 0.2),
-    inset 0 0 2px 1px rgba(255, 255, 255, 0.4);
+    inset 0 0 15px rgba(255, 255, 255, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -50,29 +86,18 @@ body {
   padding: 45px 30px 35px 50px;
   box-sizing: border-box;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  /* 左端を軸にして開く設定 */
+  transform-origin: left center;
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 1.2s ease;
   cursor: pointer;
+  z-index: 10;
 }
 
-.binder-container:hover {
-  transform: translateY(-5px) rotate(0.5deg);
-  box-shadow: 0 25px 60px rgba(126, 38, 130, 0.4);
-}
-
-.binder-container::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent 45%,
-    rgba(255, 255, 255, 0.08) 50%,
-    transparent 55%
-  );
-  pointer-events: none;
+/* めくった時のアニメーション */
+.binder-cover.open {
+  transform: rotateY(-130deg);
+  box-shadow: -20px 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 .ring-holes {
@@ -136,7 +161,6 @@ body {
   align-items: center;
 }
 
-/* シンプルな紫の正三角形 */
 .simple-triangle {
   width: 0;
   height: 0;
@@ -172,11 +196,6 @@ body {
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
-  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.parrot-wrapper:hover .parrot-svg {
-  transform: scale(1.08) rotate(-2deg);
 }
 
 .footer-zone {

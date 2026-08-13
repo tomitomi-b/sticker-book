@@ -10,94 +10,101 @@
 
   <div class="sparkle-bg"></div>
 
-  <!-- シール帳本体 -->
-  <div class="binder-container" id="binder">
+  <!-- シール帳全体を包む3D視点コンテナ -->
+  <div class="book-viewport">
     
-    <!-- 6穴バインダー風リング穴 -->
-    <div class="ring-holes">
-      <div class="hole"></div>
-      <div class="hole"></div>
-      <div class="hole"></div>
-      <div class="hole"></div>
-      <div class="hole"></div>
-      <div class="hole"></div>
+    <!-- 背表紙・中身ベース -->
+    <div class="book-base">
+      <div class="inner-page">
+        <p>Sticker Collection Inside</p>
+      </div>
+
+      <!-- 開く表紙部分 -->
+      <div class="binder-cover" id="cover">
+        
+        <!-- 6穴バインダー風リング穴 -->
+        <div class="ring-holes">
+          <div class="hole"></div>
+          <div class="hole"></div>
+          <div class="hole"></div>
+          <div class="hole"></div>
+          <div class="hole"></div>
+          <div class="hole"></div>
+        </div>
+
+        <!-- ヘッダー -->
+        <div class="header-zone">
+          <h1 class="title-main">Sticker Book</h1>
+          <div class="title-sub">COLLECTION ALBUM</div>
+          <div class="divider-line"></div>
+        </div>
+
+        <!-- 紫の正三角形 -->
+        <div class="triangle-wrapper">
+          <div class="simple-triangle"></div>
+        </div>
+
+        <!-- インコイラスト -->
+        <div class="parrot-wrapper" id="parrot">
+          <svg class="parrot-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e0aaff" />
+                <stop offset="50%" stop-color="#c77dff" />
+                <stop offset="100%" stop-color="#7b2cbf" />
+              </linearGradient>
+              <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#9d4edd" />
+                <stop offset="100%" stop-color="#3c096c" />
+              </linearGradient>
+              <linearGradient id="beakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffe600" />
+                <stop offset="100%" stop-color="#ff9900" />
+              </linearGradient>
+            </defs>
+
+            <!-- 木の枝 -->
+            <path d="M20 160 C70 155 130 165 180 160" stroke="#5c3d2e" stroke-width="10" stroke-linecap="round"/>
+            <path d="M20 160 C70 155 130 165 180 160" stroke="#7a5230" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- 尾羽 -->
+            <path d="M85 140 Q 75 185 70 195 Q 85 185 92 145 Z" fill="#5a189a" />
+            <path d="M92 140 Q 90 190 90 200 Q 100 185 102 142 Z" fill="#7b2cbf" />
+
+            <!-- 体 -->
+            <path d="M80 60 C 60 80 65 130 85 150 C 110 150 125 120 120 80 C 118 60 100 50 80 60 Z" fill="url(#bodyGrad)" />
+
+            <!-- トサカ -->
+            <path d="M88 45 C 80 20 60 15 55 20 C 70 30 78 40 82 48 Z" fill="#ffc6ff" />
+            <path d="M95 42 C 95 15 80 5 72 10 C 85 22 88 35 91 44 Z" fill="#e0aaff" />
+            <path d="M102 45 C 110 25 100 10 92 12 C 100 25 98 38 98 46 Z" fill="#c77dff" />
+
+            <!-- 頭 -->
+            <circle cx="95" cy="62" r="24" fill="url(#bodyGrad)" />
+            <path d="M90 52 C 105 50 112 60 108 70 C 98 75 88 68 90 52 Z" fill="#ffffff" opacity="0.9" />
+            <circle cx="98" cy="60" r="5" fill="#1a1a1a" />
+            <circle cx="100" cy="58" r="1.8" fill="#ffffff" />
+
+            <!-- くちばし -->
+            <path d="M105 58 C 128 58 138 75 125 92 C 118 80 110 75 104 74 Z" fill="url(#beakGrad)" />
+            <path d="M104 75 C 115 76 120 84 114 90 C 108 85 104 80 102 76 Z" fill="#d47a00" />
+
+            <!-- 翼 -->
+            <path d="M75 80 C 60 95 65 130 95 135 C 105 120 110 95 85 80 Z" fill="url(#wingGrad)" />
+            <path d="M78 90 C 68 102 72 125 92 128 C 98 118 102 100 85 90 Z" fill="#5a189a" opacity="0.6" />
+
+            <!-- 足 -->
+            <path d="M88 148 L84 158 M92 149 L92 159 M96 148 L100 157" stroke="#ffb703" stroke-width="3" stroke-linecap="round" />
+          </svg>
+        </div>
+
+        <!-- フッター -->
+        <div class="footer-zone">
+          <div class="footer-badge">CLICK TO OPEN</div>
+        </div>
+
+      </div>
     </div>
-
-    <!-- ヘッダー -->
-    <div class="header-zone">
-      <h1 class="title-main">Sticker Book</h1>
-      <div class="title-sub">COLLECTION ALBUM</div>
-      <div class="divider-line"></div>
-    </div>
-
-    <!-- 乃木坂モチーフ：シンプルな紫の正三角形 -->
-    <div class="triangle-wrapper">
-      <div class="simple-triangle"></div>
-    </div>
-
-    <!-- インコ（オウム）イラスト（SVG） -->
-    <div class="parrot-wrapper" id="parrot">
-      <svg class="parrot-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#e0aaff" />
-            <stop offset="50%" stop-color="#c77dff" />
-            <stop offset="100%" stop-color="#7b2cbf" />
-          </linearGradient>
-          <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#9d4edd" />
-            <stop offset="100%" stop-color="#3c096c" />
-          </linearGradient>
-          <linearGradient id="beakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ffe600" />
-            <stop offset="100%" stop-color="#ff9900" />
-          </linearGradient>
-        </defs>
-
-        <!-- 木の枝（止まり木） -->
-        <path d="M20 160 C70 155 130 165 180 160" stroke="#5c3d2e" stroke-width="10" stroke-linecap="round"/>
-        <path d="M20 160 C70 155 130 165 180 160" stroke="#7a5230" stroke-width="4" stroke-linecap="round"/>
-
-        <!-- 尾羽 -->
-        <path d="M85 140 Q 75 185 70 195 Q 85 185 92 145 Z" fill="#5a189a" />
-        <path d="M92 140 Q 90 190 90 200 Q 100 185 102 142 Z" fill="#7b2cbf" />
-
-        <!-- 体・胴体 -->
-        <path d="M80 60 C 60 80 65 130 85 150 C 110 150 125 120 120 80 C 118 60 100 50 80 60 Z" fill="url(#bodyGrad)" />
-
-        <!-- 冠羽（トサカ） -->
-        <path d="M88 45 C 80 20 60 15 55 20 C 70 30 78 40 82 48 Z" fill="#ffc6ff" />
-        <path d="M95 42 C 95 15 80 5 72 10 C 85 22 88 35 91 44 Z" fill="#e0aaff" />
-        <path d="M102 45 C 110 25 100 10 92 12 C 100 25 98 38 98 46 Z" fill="#c77dff" />
-
-        <!-- 頭部 -->
-        <circle cx="95" cy="62" r="24" fill="url(#bodyGrad)" />
-
-        <!-- 目の周りの白い模様 -->
-        <path d="M90 52 C 105 50 112 60 108 70 C 98 75 88 68 90 52 Z" fill="#ffffff" opacity="0.9" />
-
-        <!-- 目 -->
-        <circle cx="98" cy="60" r="5" fill="#1a1a1a" />
-        <circle cx="100" cy="58" r="1.8" fill="#ffffff" />
-
-        <!-- 大きなくちばし -->
-        <path d="M105 58 C 128 58 138 75 125 92 C 118 80 110 75 104 74 Z" fill="url(#beakGrad)" />
-        <path d="M104 75 C 115 76 120 84 114 90 C 108 85 104 80 102 76 Z" fill="#d47a00" />
-
-        <!-- 翼（羽根のレイヤー） -->
-        <path d="M75 80 C 60 95 65 130 95 135 C 105 120 110 95 85 80 Z" fill="url(#wingGrad)" />
-        <path d="M78 90 C 68 102 72 125 92 128 C 98 118 102 100 85 90 Z" fill="#5a189a" opacity="0.6" />
-
-        <!-- 足（爪） -->
-        <path d="M88 148 L84 158 M92 149 L92 159 M96 148 L100 157" stroke="#ffb703" stroke-width="3" stroke-linecap="round" />
-      </svg>
-    </div>
-
-    <!-- フッター -->
-    <div class="footer-zone">
-      <div class="footer-badge">SPECIAL BINDER</div>
-    </div>
-
   </div>
 
   <script src="script.js"></script>
