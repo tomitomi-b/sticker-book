@@ -172,17 +172,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const stickerCountBadge = document.getElementById('sticker-count-badge');
 
   function returnStickerToTray(placedData) {
+    // 配置済みから除外
     placedStickers = placedStickers.filter(p => p.instanceId !== placedData.instanceId);
     
+    // トレーの一覧に戻す
     myStickers.push({
       id: placedData.stickerId,
       title: placedData.title,
       image: placedData.image
     });
 
+    // ストレージ保存
     localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
     localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
     
+    // 再描画
     renderAlbumAndTray();
   }
 
@@ -232,8 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 台紙に貼る時は名前を表示せず、画像のみにする
       stickerEl.innerHTML = `
-        <div style="position: relative; display: inline-block;">
-          <img src="${ps.image}" alt="${ps.title}">
+        <div style="position: relative; display: inline-block; pointer-events: none;">
+          <img src="${ps.image}" alt="${ps.title}" style="pointer-events: auto;">
         </div>
       `;
 
@@ -341,21 +345,19 @@ document.addEventListener('DOMContentLoaded', () => {
       stickerEl.style.zIndex = '10';
 
       if (boardRect) {
-        let relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
-        let relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
-
-        // 枠外にドラッグした場合はトレーへ戻す
+        // 枠外にドロップしたかどうかを判定
         if (
           e.clientX < boardRect.left ||
           e.clientX > boardRect.right ||
           e.clientY < boardRect.top ||
-          e.clientY > boardRect.bottom ||
-          relX < 0 || relX > 100 ||
-          relY < 0 || relY > 100
+          e.clientY > boardRect.bottom
         ) {
           returnStickerToTray(placedData);
           return;
         }
+
+        let relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
+        let relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
 
         const target = placedStickers.find(p => p.instanceId === placedData.instanceId);
         if (target) {
