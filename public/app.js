@@ -1,5 +1,5 @@
 // ==========================================
-// sticker-book - public/app.js
+// sticker-book - public/app.js (Mobile-first)
 // ==========================================
 
 // --- State Variables ---
@@ -126,6 +126,22 @@ function initNavigation() {
   }
 }
 
+// --- Helper: Return Sticker to Tray ---
+function returnStickerToTray(stickerData) {
+  const idx = pageStickers[currentPage].indexOf(stickerData);
+  if (idx !== -1) {
+    pageStickers[currentPage].splice(idx, 1);
+  }
+
+  if (!unlockedStickers.includes(stickerData.id)) {
+    unlockedStickers.push(stickerData.id);
+  }
+
+  saveData();
+  renderBoard();
+  renderTray();
+}
+
 // --- Render Tray (獲得済みシール一覧) ---
 function renderTray() {
   const trayList = document.querySelector('.tray-list') || document.querySelector('#tray-list') || document.querySelector('.sticker-tray');
@@ -148,20 +164,27 @@ function renderTray() {
     
     const item = document.createElement('div');
     item.className = 'tray-sticker-item';
-    item.style.cursor = 'grab';
+    item.style.cursor = 'pointer';
+    item.style.userSelect = 'none';
+    item.style.touchAction = 'manipulation';
     item.innerHTML = `
-      <div class="sticker-icon" style="font-size: 2rem;">${stickerDef.icon}</div>
+      <div class="sticker-icon" style="font-size: 2.2rem;">${stickerDef.icon}</div>
       <div class="sticker-name" style="font-size: 0.8rem;">${stickerDef.name}</div>
     `;
 
     item.addEventListener('click', () => {
       pageStickers[currentPage].push({
         id: stickerId,
-        x: 40 + (Math.random() * 10 - 5),
-        y: 40 + (Math.random() * 10 - 5)
+        x: 50 + (Math.random() * 20 - 10),
+        y: 50 + (Math.random() * 20 - 10)
       });
+      const indexInUnlocked = unlockedStickers.indexOf(stickerId);
+      if (indexInUnlocked !== -1) {
+        unlockedStickers.splice(indexInUnlocked, 1);
+      }
       saveData();
       renderBoard();
+      renderTray();
     });
 
     trayList.appendChild(item);
@@ -170,14 +193,14 @@ function renderTray() {
 
 // --- Render Board (シール帳) ---
 function renderBoard() {
-  const canvas = document.querySelector('.board-canvas') || document.querySelector('#album-board') || document.querySelector('.album-board');
+  const canvas = document.querySelector('.board-canvas') || document.querySelector('#album-board') || document.querySelector('.album-board') || document.querySelector('.board');
   if (!canvas) return;
 
   canvas.innerHTML = '';
 
   const stickersOnPage = pageStickers[currentPage] || [];
 
-  stickersOnPage.forEach((st, index) => {
+  stickersOnPage.forEach((st) => {
     const stickerDef = STICKERS.find(s => s.id === st.id) || { name: st.id, icon: '🏷️' };
 
     const el = document.createElement('div');
@@ -186,13 +209,27 @@ function renderBoard() {
     el.style.left = `${st.x}%`;
     el.style.top = `${st.y}%`;
     el.style.transform = 'translate(-50%, -50%)';
-    el.style.cursor = 'move';
     el.style.touchAction = 'none';
     el.style.zIndex = '10';
+    
     el.innerHTML = `
-      <div style="font-size: 2.5rem; user-select: none; pointer-events: none;">${stickerDef.icon}</div>
-      <div style="font-size: 0.75rem; text-align: center; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; pointer-events: none;">${stickerDef.name}</div>
+      <div style="position: relative; display: inline-block;">
+        <div style="font-size: 2.8rem; user-select: none; pointer-events: none;">${stickerDef.icon}</div>
+        <div style="font-size: 0.75rem; text-align: center; background: rgba(255,255,255,0.95); padding: 2px 6px; border-radius: 4px; pointer-events: none; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">${stickerDef.name}</div>
+        <button class="remove-sticker-btn" style="position: absolute; top: -10px; right: -10px; background: #ff4d4f; color: white; border: 2px solid white; border-radius: 50%; width: 26px; height: 26px; font-size: 14px; font-weight: bold; line-height: 22px; text-align: center; cursor: pointer; padding: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 20; touch-action: manipulation;">×</button>
+      </div>
     `;
+
+    const removeBtn = el.querySelector('.remove-sticker-btn');
+    if (removeBtn) {
+      const handleRemove = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        returnStickerToTray(st);
+      };
+      removeBtn.addEventListener('click', handleRemove);
+      removeBtn.addEventListener('touchstart', handleRemove);
+    }
 
     makeDraggable(el, st, canvas);
     canvas.appendChild(el);
@@ -205,6 +242,8 @@ function makeDraggable(el, stickerData, canvas) {
   let startX, startY, startLeftPercent, startTopPercent;
 
   const onPointerDown = (e) => {
+    if (e.target.classList.contains('remove-sticker-btn')) return;
+
     e.preventDefault();
     e.stopPropagation();
     isDragging = true;
@@ -236,54 +275,27 @@ function makeDraggable(el, stickerData, canvas) {
   };
 
   const onPointerUp = (e) => {
-    if (isDragging) {
-      isDragging = false;
-      el.style.zIndex = '10';
-      try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (!isDragging) return;
+    isDragging = false;
+    el.style.zIndex = '10';
+    try { el.releasePointerCapture(e.pointerId); } catch (err) {}
 
-      const canvasRect = canvas.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
 
-      // 1. 点線枠（キャンバス）の領域外に出たか判定
-      const isOutsideCanvas = (
-        e.clientY > canvasRect.bottom - 10 ||
-        e.clientY < canvasRect.top + 10 ||
-        e.clientX < canvasRect.left + 10 ||
-        e.clientX > canvasRect.right - 10
-      );
+    // 枠外またはトレー方向へドラッグして離した判定
+    const isOutside = (
+      e.clientX < canvasRect.left ||
+      e.clientX > canvasRect.right ||
+      e.clientY < canvasRect.top ||
+      e.clientY > canvasRect.bottom ||
+      stickerData.x < 0 || stickerData.x > 100 ||
+      stickerData.y < 0 || stickerData.y > 100
+    );
 
-      // 2. 指/カーソルの直下にある要素を判定
-      el.style.display = 'none'; // 一時的に非表示にして下の要素を検出
-      const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
-      el.style.display = '';
-
-      const isDroppedOnTrayArea = dropTarget && (
-        dropTarget.closest('.tray') ||
-        dropTarget.closest('#tray') ||
-        dropTarget.closest('.sticker-tray') ||
-        dropTarget.closest('.tray-container') ||
-        dropTarget.closest('.obtained-stickers-section') ||
-        dropTarget.innerText?.includes('獲得したシール')
-      );
-
-      // 枠外またはトレーエリアに落ちた場合は一覧に戻す
-      if (isOutsideCanvas || isDroppedOnTrayArea) {
-        // ボードから削除
-        const idx = pageStickers[currentPage].indexOf(stickerData);
-        if (idx !== -1) {
-          pageStickers[currentPage].splice(idx, 1);
-        }
-
-        // 獲得リスト（unlockedStickers）に追加して復元
-        if (!unlockedStickers.includes(stickerData.id)) {
-          unlockedStickers.push(stickerData.id);
-        }
-
-        saveData();
-        renderBoard();
-        renderTray();
-      } else {
-        saveData();
-      }
+    if (isOutside) {
+      returnStickerToTray(stickerData);
+    } else {
+      saveData();
     }
   };
 
