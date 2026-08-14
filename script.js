@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // タップして貼る・戻すシンプル＆確実に動く実装
+  // タップで配置 ＆ ドラッグで移動する実装
   // ----------------------------------------------------
   const albumBoard = document.getElementById('albumBoard');
   const stickerTray = document.getElementById('stickerTray');
@@ -197,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
       myStickers.forEach(sticker => {
         const item = document.createElement('div');
         item.className = 'tray-sticker-item';
+        item.style.touchAction = 'manipulation';
         item.innerHTML = `
           <img src="${sticker.image}" alt="${sticker.title}">
           <span>${sticker.title}</span>
@@ -204,8 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // トレーのシールをタップすると台紙に配置
         item.addEventListener('click', () => {
-          const randomX = 20 + Math.random() * 60; 
-          const randomY = 20 + Math.random() * 60;
+          const randomX = 30 + Math.random() * 40; 
+          const randomY = 30 + Math.random() * 40;
 
           const newPlacedSticker = {
             instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
@@ -214,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             image: sticker.image,
             x: randomX,
             y: randomY,
-            rotation: Math.floor(Math.random() * 16) - 8
+            rotation: Math.floor(Math.random() * 20) - 10
           };
 
           placedStickers.push(newPlacedSticker);
@@ -236,6 +237,58 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPlacedStickers();
   }
 
+  // 台紙上のシールをドラッグ可能にする関数
+  function makeDraggable(el, stickerData) {
+    let isDragging = false;
+    let startX, startY, startLeftPercent, startTopPercent;
+
+    const onPointerDown = (e) => {
+      if (e.target.classList.contains('remove-sticker-btn')) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      isDragging = true;
+      el.style.zIndex = '1000';
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeftPercent = stickerData.x;
+      startTopPercent = stickerData.y;
+    };
+
+    const onPointerMove = (e) => {
+      if (!isDragging) return;
+      
+      const boardRect = albumBoard.getBoundingClientRect();
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      let newX = startLeftPercent + (dx / boardRect.width) * 100;
+      let newY = startTopPercent + (dy / boardRect.height) * 100;
+
+      stickerData.x = newX;
+      stickerData.y = newY;
+
+      el.style.left = `${newX}%`;
+      el.style.top = `${newY}%`;
+    };
+
+    const onPointerUp = (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.style.zIndex = '10';
+      try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+
+      localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', onPointerUp);
+    el.addEventListener('pointercancel', onPointerUp);
+  }
+
   function renderPlacedStickers() {
     if (!albumBoard) return;
     const existingStickers = albumBoard.querySelectorAll('.placed-sticker');
@@ -252,18 +305,35 @@ document.addEventListener('DOMContentLoaded', () => {
       stickerEl.style.left = `${ps.x}%`;
       stickerEl.style.top = `${ps.y}%`;
       stickerEl.style.transform = `translate(-50%, -50%) rotate(${ps.rotation || 0}deg)`;
+      stickerEl.style.position = 'absolute';
+      stickerEl.style.touchAction = 'none'; // スマホドラッグに必須
+      stickerEl.style.zIndex = '10';
+      stickerEl.style.display = 'flex';
+      stickerEl.style.flexDirection = 'column';
+      stickerEl.style.alignItems = 'center';
 
+      // 画像と×ボタンを配置
       stickerEl.innerHTML = `
-        <img src="${ps.image}" alt="${ps.title}">
-        <span>${ps.title}</span>
+        <div style="position: relative;">
+          <img src="${ps.image}" alt="${ps.title}" style="pointer-events: none; width: 50px; height: 50px; border-radius: 50%; border: 2px solid #f3e8ff; object-fit: cover;">
+          <button class="remove-sticker-btn" style="position: absolute; top: -5px; right: -5px; background: #ff4d4f; color: white; border: 2px solid white; border-radius: 50%; width: 24px; height: 24px; font-size: 14px; font-weight: bold; line-height: 20px; text-align: center; cursor: pointer; padding: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 20; touch-action: manipulation;">×</button>
+        </div>
+        <span style="font-size: 9px; font-weight: bold; color: #44403c; max-width: 65px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; margin-top: 4px;">${ps.title}</span>
       `;
 
-      // 台紙上のシールをタップするとトレーに戻る
-      stickerEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        returnStickerToTray(ps);
-      });
+      const removeBtn = stickerEl.querySelector('.remove-sticker-btn');
+      if (removeBtn) {
+        const handleRemove = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          returnStickerToTray(ps);
+        };
+        // タップでもクリックでも反応させる
+        removeBtn.addEventListener('click', handleRemove);
+        removeBtn.addEventListener('touchstart', handleRemove, { passive: false });
+      }
 
+      makeDraggable(stickerEl, ps);
       albumBoard.appendChild(stickerEl);
     });
   }
