@@ -172,21 +172,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const stickerCountBadge = document.getElementById('sticker-count-badge');
 
   function returnStickerToTray(placedData) {
-    // 配置済みから除外
     placedStickers = placedStickers.filter(p => p.instanceId !== placedData.instanceId);
     
-    // トレーの一覧に戻す
     myStickers.push({
       id: placedData.stickerId,
       title: placedData.title,
       image: placedData.image
     });
 
-    // ストレージ保存
     localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
     localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
     
-    // 再描画
     renderAlbumAndTray();
   }
 
@@ -234,12 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
       stickerEl.style.top = `${ps.y}%`;
       stickerEl.style.transform = `translate(-50%, -50%) rotate(${ps.rotation || 0}deg)`;
 
-      // 台紙に貼る時は名前を表示せず、画像のみにする
-      stickerEl.innerHTML = `
-        <div style="position: relative; display: inline-block; pointer-events: none;">
-          <img src="${ps.image}" alt="${ps.title}" style="pointer-events: auto;">
-        </div>
-      `;
+      // 台紙上では名前なし、画像のみ（余計なラッパーを排除してタッチ操作を確実に）
+      stickerEl.innerHTML = `<img src="${ps.image}" alt="${ps.title}">`;
 
       setupPlacedStickerDrag(stickerEl, ps);
       albumBoard.appendChild(stickerEl);
@@ -345,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
       stickerEl.style.zIndex = '10';
 
       if (boardRect) {
-        // 枠外にドロップしたかどうかを判定
+        // 台紙の枠外にドロップされた場合はトレーに戻す
         if (
           e.clientX < boardRect.left ||
           e.clientX > boardRect.right ||
