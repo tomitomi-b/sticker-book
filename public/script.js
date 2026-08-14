@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. 表紙開閉
+  // 表紙開閉
   const cover = document.getElementById('cover');
   if (cover) {
     cover.addEventListener('click', () => {
@@ -8,17 +8,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. 状態管理（ローカルストレージ連携）
-  let userLocation = null; // {lat, lng}
+  // ユーザーIDの生成/取得（自分が作成したか識別するため）
+  let myUserId = localStorage.getItem('my_user_id');
+  if (!myUserId) {
+    myUserId = 'user_' + Math.random().toString(36).substring(2, 9);
+    localStorage.setItem('my_user_id', myUserId);
+  }
+
+  let userLocation = null;
   let myStickers = JSON.parse(localStorage.getItem('my_collected_stickers') || '[]');
   let mapSpots = JSON.parse(localStorage.getItem('map_sticker_spots') || '[]');
 
-  // 初期サンプルスポット（もし何も登録されていなければ追加）
+  // サンプルデータ
   if (mapSpots.length === 0) {
     mapSpots = [
       {
         id: 'sample-1',
+        ownerId: 'other-user',
         title: '東京駅限定スタンプ',
+        description: '東京駅丸の内駅舎を記念した特製スタンプです！',
         lat: 35.681236,
         lng: 139.767125,
         image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=150&auto=format&fit=crop&q=60'
@@ -27,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('map_sticker_spots', JSON.stringify(mapSpots));
   }
 
-  // 3. Leaflet 地図初期化
+  // 地図初期化
   const map = L.map('map').setView([35.681236, 139.767125], 14);
   window.map = map;
 
@@ -37,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let userMarker = null;
 
-  // 2地点間の距離（メートル）を計算する関数 (Haversine formula)
   function getDistanceMeters(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
     const φ1 = lat1 * Math.PI / 180;
@@ -52,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return R * c;
   }
 
-  // 所持シールのUI更新
   function renderMyStickers() {
     const listEl = document.getElementById('myStickerList');
     listEl.innerHTML = '';
@@ -73,17 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // スポットの再描画
   const spotMarkers = [];
   function renderMapSpots() {
-    // 既存マーカー削除
     spotMarkers.forEach(m => map.removeLayer(m));
     spotMarkers.length = 0;
 
     mapSpots.forEach(spot => {
       const isAlreadyGet = myStickers.some(s => s.id === spot.id);
-      
-      // カスタムアイコン
+      const isMine = spot.ownerId === myUserId; // 自分が作成したものかチェック
+
       const spotIcon = L.icon({
         iconUrl: spot.image,
         iconSize: [38, 38],
@@ -92,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const marker = L.marker([spot.lat, spot.lng], { icon: spotIcon }).addTo(map);
 
-      // ポップアップイベント
       marker.on('click', () => {
         let distText = '現在地を取得してください';
         let canGet = false;
@@ -100,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userLocation) {
           const dist = getDistanceMeters(userLocation.lat, userLocation.lng, spot.lat, spot.lng);
           distText = `距離: 約${Math.round(dist)}m`;
-          // 200m以内なら獲得可能（デモ用に200m設定）
           if (dist <= 200) canGet = true;
         }
 
@@ -112,10 +114,18 @@ document.addEventListener('DOMContentLoaded', () => {
         popupContent.innerHTML = `
           <b>${spot.title}</b>
           <img src="${spot.image}" class="popup-img">
+          <p class="popup-desc">${spot.description || '説明はありません。'}</p>
           <small>${distText}</small>
           <button class="popup-get-btn" ${btnDisabled}>${btnText}</button>
+          ${isMine ? `
+            <div class="owner-actions">
+              <button class="edit-btn">編集</button>
+              <button class="delete-btn">削除</button>
+            </div>
+          ` : ''}
         `;
 
+        // 獲得ボタンイベント
         const getBtn = popupContent.querySelector('.popup-get-btn');
         if (getBtn && canGet && !isAlreadyGet) {
           getBtn.addEventListener('click', () => {
@@ -128,6 +138,30 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
+        // 自分が作成したスポットの場合：編集・削除イベントを登録
+        if (isMine) {
+          const editBtn = popupContent.querySelector('.edit-btn');
+          const deleteBtn = popupContent.querySelector('.delete-btn');
+
+          if (editBtn) {
+            editBtn.addEventListener('click', () => {
+              openEditModal(spot);
+              map.closePopup();
+            });
+          }
+
+          if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+              if (confirm(`「${spot.title}」を削除してもよろしいですか？`)) {
+                mapSpots = mapSpots.filter(s => s.id !== spot.id);
+                localStorage.setItem('map_sticker_spots', JSON.stringify(mapSpots));
+                renderMapSpots();
+                alert('削除しました。');
+              }
+            });
+          }
+        }
+
         marker.bindPopup(popupContent).openPopup();
       });
 
@@ -135,7 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 現在地更新処理
   function updateUserLocation() {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition((pos) => {
@@ -144,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
           lng: pos.coords.longitude
         };
 
-        // 現在地ピンを表示
         if (userMarker) map.removeLayer(userMarker);
         
         userMarker = L.circleMarker([userLocation.lat, userLocation.lng], {
@@ -166,22 +198,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('locate-me-btn').addEventListener('click', updateUserLocation);
 
-  // 地図クリックで新しいスポットを自作登録
-  const createModal = document.getElementById('create-modal');
-  const createCancelBtn = document.getElementById('create-cancel-btn');
-  const createForm = document.getElementById('create-sticker-form');
-  const imageInput = document.getElementById('sticker-image-input');
+  // モーダル関連
+  const spotModal = document.getElementById('spot-modal');
+  const modalCancelBtn = document.getElementById('modal-cancel-btn');
+  const spotForm = document.getElementById('spot-form');
+  const imageInput = document.getElementById('spot-image-input');
   
   let selectedLatLng = null;
   let uploadedImageBase64 = '';
 
+  // 新規設置モーダルを開く
   map.on('click', (e) => {
     selectedLatLng = e.latlng;
-    createModal.style.display = 'flex';
+    uploadedImageBase64 = '';
+    
+    document.getElementById('modal-title').textContent = '新しいシールスポットを設置';
+    document.getElementById('modal-submit-btn').textContent = '設置する';
+    document.getElementById('editing-spot-id').value = '';
+    document.getElementById('image-input-label').textContent = 'シール画像';
+    spotForm.reset();
+    imageInput.required = true;
+
+    spotModal.style.display = 'flex';
   });
 
-  createCancelBtn.addEventListener('click', () => {
-    createModal.style.display = 'none';
+  // 編集モーダルを開く関数
+  function openEditModal(spot) {
+    document.getElementById('modal-title').textContent = 'スポットの編集';
+    document.getElementById('modal-submit-btn').textContent = '更新する';
+    document.getElementById('editing-spot-id').value = spot.id;
+    document.getElementById('spot-title-input').value = spot.title;
+    document.getElementById('spot-desc-input').value = spot.description || '';
+    document.getElementById('image-input-label').textContent = 'シール画像 (変更する場合のみ)';
+    
+    uploadedImageBase64 = spot.image; // デフォルトは既存の画像
+    imageInput.required = false;
+
+    spotModal.style.display = 'flex';
+  }
+
+  modalCancelBtn.addEventListener('click', () => {
+    spotModal.style.display = 'none';
   });
 
   imageInput.addEventListener('change', (e) => {
@@ -193,30 +250,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  createForm.addEventListener('submit', (e) => {
+  // 送信（新規・更新共通）
+  spotForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const title = document.getElementById('sticker-title-input').value;
-    if (!uploadedImageBase64 || !selectedLatLng) return;
+    const editingId = document.getElementById('editing-spot-id').value;
+    const title = document.getElementById('spot-title-input').value;
+    const description = document.getElementById('spot-desc-input').value;
 
-    const newSpot = {
-      id: 'spot-' + Date.now(),
-      title: title,
-      lat: selectedLatLng.lat,
-      lng: selectedLatLng.lng,
-      image: uploadedImageBase64
-    };
+    if (editingId) {
+      // 編集更新
+      const targetSpot = mapSpots.find(s => s.id === editingId);
+      if (targetSpot) {
+        targetSpot.title = title;
+        targetSpot.description = description;
+        if (uploadedImageBase64) targetSpot.image = uploadedImageBase64;
+      }
+      alert('スポット情報を更新しました！');
+    } else {
+      // 新規作成
+      if (!uploadedImageBase64 || !selectedLatLng) return;
 
-    mapSpots.push(newSpot);
+      const newSpot = {
+        id: 'spot-' + Date.now(),
+        ownerId: myUserId, // 作成者IDを付与
+        title: title,
+        description: description,
+        lat: selectedLatLng.lat,
+        lng: selectedLatLng.lng,
+        image: uploadedImageBase64
+      };
+
+      mapSpots.push(newSpot);
+      alert(`📍 「${title}」のシールスポットを設置しました！`);
+    }
+
     localStorage.setItem('map_sticker_spots', JSON.stringify(mapSpots));
-
     renderMapSpots();
-    createForm.reset();
+    spotForm.reset();
     uploadedImageBase64 = '';
-    createModal.style.display = 'none';
-    alert(`📍 「${title}」のシールスポットを地図に設置しました！他のユーザーもここに来れば獲得できます。`);
+    spotModal.style.display = 'none';
   });
 
-  // 初回起動処理
+  // 初回表示
   renderMyStickers();
   renderMapSpots();
   updateUserLocation();
