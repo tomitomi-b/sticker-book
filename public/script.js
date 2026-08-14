@@ -199,7 +199,8 @@ document.addEventListener('DOMContentLoaded', () => {
       myStickers.forEach(sticker => {
         const item = document.createElement('div');
         item.className = 'tray-sticker-item';
-        item.style.touchAction = 'none';
+        // スクロールを邪魔しないよう、ピンチやデフォルト動作を許可しつつJSで制御
+        item.style.touchAction = 'pan-y'; 
         item.dataset.stickerId = sticker.id;
         item.innerHTML = `
           <img src="${sticker.image}" alt="${sticker.title}">
@@ -242,35 +243,46 @@ document.addEventListener('DOMContentLoaded', () => {
   // トレーから台紙へドラッグ
   function setupTrayItemDrag(itemEl, stickerData) {
     itemEl.addEventListener('pointerdown', (e) => {
-      let isDragging = true;
-      try { itemEl.setPointerCapture(e.pointerId); } catch (err) {}
-
-      const ghostEl = itemEl.cloneNode(true);
-      ghostEl.style.position = 'fixed';
-      ghostEl.style.zIndex = '1000';
-      ghostEl.style.opacity = '0.85';
-      ghostEl.style.pointerEvents = 'none';
-      ghostEl.style.transform = 'translate(-50%, -50%) scale(1.1)';
-      document.body.appendChild(ghostEl);
-
-      const updateGhostPosition = (ev) => {
-        ghostEl.style.left = `${ev.clientX}px`;
-        ghostEl.style.top = `${ev.clientY}px`;
-      };
-      updateGhostPosition(e);
+      let startX = e.clientX;
+      let startY = e.clientY;
+      let isDragging = false;
+      let ghostEl = null;
 
       const onPointerMove = (ev) => {
-        if (!isDragging) return;
-        updateGhostPosition(ev);
+        const moveX = Math.abs(ev.clientX - startX);
+        const moveY = Math.abs(ev.clientY - startY);
+
+        // 少し動かしたら「ドラッグ開始」と判定してスクロールより優先させる
+        if (!isDragging && (moveX > 5 || moveY > 5)) {
+          isDragging = true;
+          try { itemEl.setPointerCapture(e.pointerId); } catch (err) {}
+
+          ghostEl = itemEl.cloneNode(true);
+          ghostEl.style.position = 'fixed';
+          ghostEl.style.zIndex = '1000';
+          ghostEl.style.opacity = '0.85';
+          ghostEl.style.pointerEvents = 'none';
+          ghostEl.style.transform = 'translate(-50%, -50%) scale(1.1)';
+          document.body.appendChild(ghostEl);
+        }
+
+        if (isDragging && ghostEl) {
+          ghostEl.style.left = `${ev.clientX}px`;
+          ghostEl.style.top = `${ev.clientY}px`;
+          ev.preventDefault(); // 画面全体のスクロールを抑制
+        }
       };
 
       const onPointerUp = (ev) => {
-        if (!isDragging) return;
-        isDragging = false;
-
-        ghostEl.remove();
         document.removeEventListener('pointermove', onPointerMove);
         document.removeEventListener('pointerup', onPointerUp);
+
+        if (!isDragging) return;
+
+        if (ghostEl) {
+          ghostEl.remove();
+          ghostEl = null;
+        }
 
         const boardRect = albumBoard.getBoundingClientRect();
         if (
@@ -307,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       document.addEventListener('pointermove', onPointerMove);
       document.addEventListener('pointerup', onPointerUp);
-      e.stopPropagation();
     });
   }
 
@@ -325,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
         stickerEl.style.left = `${relX}%`;
         stickerEl.style.top = `${relY}%`;
+        ev.preventDefault();
       };
 
       const onPointerUp = (ev) => {
