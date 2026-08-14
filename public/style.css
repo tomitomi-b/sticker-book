@@ -564,3 +564,8 @@ body {
 .sticker-action-menu .trash-btn:hover {
   background: #fef2f2;
 }
+
+/* スマホでのドラッグ時に画面スクロール等のブラウザ動作を抑制する */
+.tray-sticker-item, .placed-sticker {
+  touch-action: none;
+}
