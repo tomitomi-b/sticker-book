@@ -194,13 +194,13 @@ function renderBoard() {
       <div style="font-size: 0.75rem; text-align: center; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; pointer-events: none;">${stickerDef.name}</div>
     `;
 
-    makeDraggable(el, index, canvas);
+    makeDraggable(el, st, canvas);
     canvas.appendChild(el);
   });
 }
 
 // --- Make Placed Sticker Draggable ---
-function makeDraggable(el, index, canvas) {
+function makeDraggable(el, stickerData, canvas) {
   let isDragging = false;
   let startX, startY, startLeftPercent, startTopPercent;
 
@@ -209,13 +209,13 @@ function makeDraggable(el, index, canvas) {
     e.stopPropagation();
     isDragging = true;
     el.style.zIndex = '1000';
-    el.setPointerCapture(e.pointerId);
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
 
     startX = e.clientX;
     startY = e.clientY;
 
-    startLeftPercent = pageStickers[currentPage][index].x;
-    startTopPercent = pageStickers[currentPage][index].y;
+    startLeftPercent = stickerData.x;
+    startTopPercent = stickerData.y;
   };
 
   const onPointerMove = (e) => {
@@ -228,8 +228,8 @@ function makeDraggable(el, index, canvas) {
     let newX = startLeftPercent + (dx / canvasRect.width) * 100;
     let newY = startTopPercent + (dy / canvasRect.height) * 100;
 
-    pageStickers[currentPage][index].x = newX;
-    pageStickers[currentPage][index].y = newY;
+    stickerData.x = newX;
+    stickerData.y = newY;
 
     el.style.left = `${newX}%`;
     el.style.top = `${newY}%`;
@@ -239,24 +239,43 @@ function makeDraggable(el, index, canvas) {
     if (isDragging) {
       isDragging = false;
       el.style.zIndex = '10';
+      try { el.releasePointerCapture(e.pointerId); } catch (err) {}
 
       const canvasRect = canvas.getBoundingClientRect();
 
-      // マウス/指を離した位置が点線枠の外側（特に下側のトレーエリア）にあるか判定
+      // 1. 点線枠（キャンバス）の領域外に出たか判定
       const isOutsideCanvas = (
-        e.clientY > canvasRect.bottom - 20 ||
-        e.clientY < canvasRect.top ||
-        e.clientX < canvasRect.left ||
-        e.clientX > canvasRect.right
+        e.clientY > canvasRect.bottom - 10 ||
+        e.clientY < canvasRect.top + 10 ||
+        e.clientX < canvasRect.left + 10 ||
+        e.clientX > canvasRect.right - 10
       );
 
-      if (isOutsideCanvas) {
-        // 1. ボードからシールを取り除く
-        const removed = pageStickers[currentPage].splice(index, 1)[0];
-        
-        // 2. 獲得リスト（unlockedStickers）に無ければ復元追加する
-        if (removed && !unlockedStickers.includes(removed.id)) {
-          unlockedStickers.push(removed.id);
+      // 2. 指/カーソルの直下にある要素を判定
+      el.style.display = 'none'; // 一時的に非表示にして下の要素を検出
+      const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+      el.style.display = '';
+
+      const isDroppedOnTrayArea = dropTarget && (
+        dropTarget.closest('.tray') ||
+        dropTarget.closest('#tray') ||
+        dropTarget.closest('.sticker-tray') ||
+        dropTarget.closest('.tray-container') ||
+        dropTarget.closest('.obtained-stickers-section') ||
+        dropTarget.innerText?.includes('獲得したシール')
+      );
+
+      // 枠外またはトレーエリアに落ちた場合は一覧に戻す
+      if (isOutsideCanvas || isDroppedOnTrayArea) {
+        // ボードから削除
+        const idx = pageStickers[currentPage].indexOf(stickerData);
+        if (idx !== -1) {
+          pageStickers[currentPage].splice(idx, 1);
+        }
+
+        // 獲得リスト（unlockedStickers）に追加して復元
+        if (!unlockedStickers.includes(stickerData.id)) {
+          unlockedStickers.push(stickerData.id);
         }
 
         saveData();
@@ -265,10 +284,6 @@ function makeDraggable(el, index, canvas) {
       } else {
         saveData();
       }
-
-      try {
-        el.releasePointerCapture(e.pointerId);
-      } catch (err) {}
     }
   };
 
