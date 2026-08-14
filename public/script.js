@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // 2ページ目: シール帳＆トレーのレンダリング＆ドラッグ処理
+  // シール帳＆トレーのレンダリング＆ドラッグ処理
   // ----------------------------------------------------
   const albumBoard = document.getElementById('albumBoard');
   const stickerTray = document.getElementById('stickerTray');
@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderPlacedStickers() {
-    // 既存の貼られたシール要素をクリア
     const existingStickers = albumBoard.querySelectorAll('.placed-sticker');
     existingStickers.forEach(el => el.remove());
 
@@ -140,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span>${ps.title}</span>
       `;
 
-      // 台紙上でのドラッグ移動イベント設定
+      // 台紙上でのドラッグ移動＆ダブルクリック処理設定
       setupPlacedStickerDrag(stickerEl, ps);
       albumBoard.appendChild(stickerEl);
     });
@@ -155,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
       isDragging = true;
       itemEl.setPointerCapture(e.pointerId);
 
-      // ドラッグ中の見た目クローンを作成
       ghostEl = itemEl.cloneNode(true);
       ghostEl.style.position = 'fixed';
       ghostEl.style.zIndex = '1000';
@@ -181,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ghostEl = null;
       }
 
-      // ドロップ判定（albumBoardの領域内か）
+      // ドロップ判定
       const boardRect = albumBoard.getBoundingClientRect();
       if (
         e.clientX >= boardRect.left &&
@@ -189,10 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
         e.clientY >= boardRect.top &&
         e.clientY <= boardRect.bottom
       ) {
-        // 台紙内での相対パーセント座標を計算
         const relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
         const relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
-        const randomRotation = Math.floor(Math.random() * 16) - 8; // -8deg ~ +8deg
+        const randomRotation = Math.floor(Math.random() * 16) - 8;
 
         const newPlacedSticker = {
           instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
@@ -204,9 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
           rotation: randomRotation
         };
 
+        // 台紙に追加し、トレーから除去
         placedStickers.push(newPlacedSticker);
+        myStickers = myStickers.filter(s => s.id !== stickerData.id);
+
         localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
-        renderPlacedStickers();
+        localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
+        renderAlbumAndTray();
       }
     });
 
@@ -218,10 +219,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 台紙内での移動ドラッグ
+  // 台紙内での移動ドラッグ ＆ ダブルタップ処理
   function setupPlacedStickerDrag(stickerEl, placedData) {
     let isDragging = false;
     let boardRect = null;
+    let lastTapTime = 0;
+
+    // ダブルタップ/ダブルクリックで「一覧に戻す」操作メニュー表示
+    stickerEl.addEventListener('click', (e) => {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTapTime;
+      
+      if (tapLength < 300 && tapLength > 0) {
+        showStickerActionMenu(e, placedData);
+      }
+      lastTapTime = currentTime;
+    });
 
     stickerEl.addEventListener('pointerdown', (e) => {
       isDragging = true;
@@ -236,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
       let relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
       let relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
 
-      // 範囲制限 (0% ~ 100%)
       relX = Math.max(0, Math.min(100, relX));
       relY = Math.max(0, Math.min(100, relY));
 
@@ -256,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
         relX = Math.max(0, Math.min(100, relX));
         relY = Math.max(0, Math.min(100, relY));
 
-        // 座標更新＆保存
         const target = placedStickers.find(p => p.instanceId === placedData.instanceId);
         if (target) {
           target.x = relX;
@@ -265,6 +276,64 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+  }
+
+  // シール操作ポップアップ（一覧に戻す / 削除）
+  function showStickerActionMenu(e, placedData) {
+    // 既存のメニューを削除
+    const existingMenu = document.querySelector('.sticker-action-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'sticker-action-menu';
+    menu.innerHTML = `
+      <button class="return-btn">↩️ 一覧に戻す</button>
+      <button class="trash-btn">🗑️ 削除する</button>
+    `;
+
+    document.body.appendChild(menu);
+
+    const menuWidth = 140;
+    menu.style.left = `${Math.min(window.innerWidth - menuWidth - 10, e.clientX)}px`;
+    menu.style.top = `${e.clientY - 40}px`;
+
+    // 一覧に戻す処理
+    menu.querySelector('.return-btn').addEventListener('click', () => {
+      placedStickers = placedStickers.filter(p => p.instanceId !== placedData.instanceId);
+      
+      // トレー（所持リスト）に復元
+      myStickers.push({
+        id: placedData.stickerId,
+        title: placedData.title,
+        image: placedData.image
+      });
+
+      localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
+      localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
+      
+      menu.remove();
+      renderAlbumAndTray();
+    });
+
+    // 削除処理
+    menu.querySelector('.trash-btn').addEventListener('click', () => {
+      placedStickers = placedStickers.filter(p => p.instanceId !== placedData.instanceId);
+      localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
+      
+      menu.remove();
+      renderAlbumAndTray();
+    });
+
+    // メニュー外クリックで閉じる
+    setTimeout(() => {
+      const closeMenu = (evt) => {
+        if (!menu.contains(evt.target)) {
+          menu.remove();
+          document.removeEventListener('click', closeMenu);
+        }
+      };
+      document.addEventListener('click', closeMenu);
+    }, 10);
   }
 
   // ----------------------------------------------------
@@ -276,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     spotMarkers.length = 0;
 
     mapSpots.forEach(spot => {
-      const isAlreadyGet = myStickers.some(s => s.id === spot.id);
+      const isAlreadyGet = myStickers.some(s => s.id === spot.id) || placedStickers.some(p => p.stickerId === spot.id);
       const isMine = spot.ownerId === myUserId;
 
       const spotIcon = L.icon({
