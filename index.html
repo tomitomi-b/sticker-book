@@ -11,79 +11,85 @@
 
   <div class="bg-gradient"></div>
 
-  <div class="book-container">
-    
-    <!-- 表紙 -->
-    <div class="binder-cover" id="cover">
-      <div class="cover-content">
-        <div class="logo-triangle"></div>
-        <h1 class="title-main">STICKER HUNT</h1>
-        <p class="title-sub">COLLECTION ALBUM</p>
+  <!-- 全体レイアウト用ラッパー -->
+  <div class="app-layout">
+
+    <!-- 本の本体 -->
+    <div class="book-container">
+      
+      <!-- 表紙 -->
+      <div class="binder-cover" id="cover">
+        <div class="cover-content">
+          <div class="logo-triangle"></div>
+          <h1 class="title-main">STICKER HUNT</h1>
+          <p class="title-sub">COLLECTION ALBUM</p>
+          
+          <div class="parrot-icon">
+            <svg viewBox="0 0 100 100">
+              <ellipse cx="50" cy="55" rx="16" ry="28" fill="#581c87" />
+              <circle cx="50" cy="28" r="14" fill="#581c87" />
+              <circle cx="44" cy="26" r="4" fill="#fff" />
+              <circle cx="43" cy="26" r="2" fill="#000" />
+              <path d="M38,28 Q28,30 32,40 Q40,36 40,32 Z" fill="#f59e0b" />
+              <path d="M58,75 L68,98 L60,82 Z" fill="#ec4899" />
+              <rect x="15" y="76" width="70" height="4" rx="2" fill="#94a3b8" />
+            </svg>
+          </div>
+
+          <div class="open-prompt">CLICK TO OPEN</div>
+        </div>
+      </div>
+
+      <!-- メインバインダー内部 -->
+      <div class="inner-page">
         
-        <div class="parrot-icon">
-          <svg viewBox="0 0 100 100">
-            <ellipse cx="50" cy="55" rx="16" ry="28" fill="#581c87" />
-            <circle cx="50" cy="28" r="14" fill="#581c87" />
-            <circle cx="44" cy="26" r="4" fill="#fff" />
-            <circle cx="43" cy="26" r="2" fill="#000" />
-            <path d="M38,28 Q28,30 32,40 Q40,36 40,32 Z" fill="#f59e0b" />
-            <path d="M58,75 L68,98 L60,82 Z" fill="#ec4899" />
-            <rect x="15" y="76" width="70" height="4" rx="2" fill="#94a3b8" />
-          </svg>
+        <!-- ページ切替ヘッダー -->
+        <nav class="page-nav">
+          <button id="btn-page-1" class="nav-tab active">🗺️ マップ</button>
+          <button id="btn-page-2" class="nav-tab">📖 コレクション</button>
+        </nav>
+
+        <!-- 1ページ目: マップ・探索 -->
+        <div class="page-content active" id="page-1">
+          <header class="app-header">
+            <h2>📍 スポット探索</h2>
+            <p>近くのスポットでシールをGET！</p>
+          </header>
+
+          <div id="map"></div>
+
+          <div class="controls">
+            <button id="locate-me-btn" class="action-btn">現在地を更新する</button>
+            <p class="hint-text">※地図をクリックして新しいシールスポットを設置できます</p>
+          </div>
         </div>
 
-        <div class="open-prompt">CLICK TO OPEN</div>
+        <!-- 2ページ目: 純粋なシールコレクション台紙 -->
+        <div class="page-content" id="page-2">
+          <header class="app-header app-header-album">
+            <h2>✨ My シール帳</h2>
+            <p class="album-hint">下のトレーからシールをドラッグして貼ってね！</p>
+          </header>
+
+          <!-- 自由に貼れるキャンバス台紙 -->
+          <div class="album-board" id="albumBoard">
+            <span class="empty-album-msg" id="emptyMsg">ここにシールをペタペタ貼ろう！</span>
+          </div>
+        </div>
+
       </div>
+
     </div>
 
-    <!-- メインバインダー内部 -->
-    <div class="inner-page">
-      
-      <!-- ページ切替ヘッダー -->
-      <nav class="page-nav">
-        <button id="btn-page-1" class="nav-tab active">🗺️ マップ</button>
-        <button id="btn-page-2" class="nav-tab">📖 コレクション</button>
-      </nav>
-
-      <!-- 1ページ目: マップ・探索 -->
-      <div class="page-content active" id="page-1">
-        <header class="app-header">
-          <h2>📍 スポット探索</h2>
-          <p>近くのスポットでシールをGET！</p>
-        </header>
-
-        <div id="map"></div>
-
-        <div class="controls">
-          <button id="locate-me-btn" class="action-btn">現在地を更新する</button>
-          <p class="hint-text">※地図をクリックして新しいシールスポットを設置できます</p>
-        </div>
+    <!-- 本の外側に配置された獲得シールトレー -->
+    <div class="sticker-tray-section">
+      <div class="tray-header">
+        <span>獲得したシール</span>
+        <span id="sticker-count-badge" class="count-badge">0枚</span>
       </div>
-
-      <!-- 2ページ目: 純粋なシールコレクション台紙 -->
-      <div class="page-content" id="page-2">
-        <header class="app-header app-header-album">
-          <h2>✨ My シール帳</h2>
-          <p class="album-hint">下のトレーからシールをドラッグして貼ってね！</p>
-        </header>
-
-        <!-- 自由に貼れるキャンバス台紙 -->
-        <div class="album-board" id="albumBoard">
-          <span class="empty-album-msg" id="emptyMsg">ここにシールをペタペタ貼ろう！</span>
-        </div>
-
-        <!-- 下部の所持シールトレー -->
-        <div class="sticker-tray-section">
-          <div class="tray-header">
-            <span>獲得したシール</span>
-            <span id="sticker-count-badge" class="count-badge">0枚</span>
-          </div>
-          <div class="sticker-tray" id="stickerTray">
-            <span class="empty-tray-msg">シールがありません</span>
-          </div>
-        </div>
+      <div class="sticker-tray" id="stickerTray">
+        <span class="empty-tray-msg">シールがありません</span>
       </div>
-
     </div>
 
   </div>
