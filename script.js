@@ -8,7 +8,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ユーザーIDの生成/取得（自分が作成したか識別するため）
+  // ページ切り替え（マップ ↔ コレクション）
+  const btnPage1 = document.getElementById('btn-page-1');
+  const btnPage2 = document.getElementById('btn-page-2');
+  const page1 = document.getElementById('page-1');
+  const page2 = document.getElementById('page-2');
+
+  btnPage1.addEventListener('click', () => {
+    btnPage1.classList.add('active');
+    btnPage2.classList.remove('active');
+    page1.classList.add('active');
+    page2.classList.remove('active');
+    if (window.map) window.map.invalidateSize();
+  });
+
+  btnPage2.addEventListener('click', () => {
+    btnPage2.classList.add('active');
+    btnPage1.classList.remove('active');
+    page2.classList.add('active');
+    page1.classList.remove('active');
+    renderAlbumBoard();
+  });
+
+  // ユーザーIDの生成/取得
   let myUserId = localStorage.getItem('my_user_id');
   if (!myUserId) {
     myUserId = 'user_' + Math.random().toString(36).substring(2, 9);
@@ -58,23 +80,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return R * c;
   }
 
-  function renderMyStickers() {
-    const listEl = document.getElementById('myStickerList');
-    listEl.innerHTML = '';
-    
+  // 2ページ目: アルバム台紙のレンダリング
+  function renderAlbumBoard() {
+    const boardEl = document.getElementById('albumBoard');
+    const countEl = document.getElementById('sticker-count-text');
+    boardEl.innerHTML = '';
+
+    countEl.textContent = `獲得したシール: ${myStickers.length}枚`;
+
     if (myStickers.length === 0) {
-      listEl.innerHTML = '<span class="empty-msg">まだシールを獲得していません。</span>';
+      boardEl.innerHTML = '<span class="empty-album-msg">まだシールがありません。<br>マップで獲得しに行こう！</span>';
       return;
     }
 
     myStickers.forEach(s => {
       const item = document.createElement('div');
-      item.className = 'sticker-item';
+      item.className = 'album-sticker-item';
       item.innerHTML = `
         <img src="${s.image}" alt="${s.title}">
         <span>${s.title}</span>
       `;
-      listEl.appendChild(item);
+      boardEl.appendChild(item);
     });
   }
 
@@ -123,20 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
           ` : ''}
         `;
 
-        // 獲得ボタンイベント
         const getBtn = popupContent.querySelector('.popup-get-btn');
         if (getBtn && canGet && !isAlreadyGet) {
           getBtn.addEventListener('click', () => {
             myStickers.push(spot);
             localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
-            renderMyStickers();
-            alert(`🎉 「${spot.title}」のシールを獲得しました！`);
+            alert(`🎉 「${spot.title}」のシールを獲得しました！\n「📖 コレクション」ページに追加されました！`);
             map.closePopup();
             renderMapSpots();
           });
         }
 
-        // 自分のスポットの編集・削除イベント
         if (isMine) {
           const editBtn = popupContent.querySelector('.edit-btn');
           const deleteBtn = popupContent.querySelector('.delete-btn');
@@ -205,7 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedLatLng = null;
   let uploadedImageBase64 = '';
 
-  // 新規設置モーダルを開く
   map.on('click', (e) => {
     selectedLatLng = e.latlng;
     uploadedImageBase64 = '';
@@ -220,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
     spotModal.style.display = 'flex';
   });
 
-  // 編集モーダルを開く
   function openEditModal(spot) {
     document.getElementById('modal-title').textContent = 'スポットの編集';
     document.getElementById('modal-submit-btn').textContent = '更新する';
@@ -247,14 +268,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 送信（新規・更新共通）
   spotForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const editingId = document.getElementById('editing-spot-id').value;
     const title = document.getElementById('spot-title-input').value;
 
     if (editingId) {
-      // 編集更新
       const targetSpot = mapSpots.find(s => s.id === editingId);
       if (targetSpot) {
         targetSpot.title = title;
@@ -262,7 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       alert('シール名を更新しました！');
     } else {
-      // 新規作成
       if (!uploadedImageBase64 || !selectedLatLng) return;
 
       const newSpot = {
@@ -286,7 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 初回表示
-  renderMyStickers();
   renderMapSpots();
   updateUserLocation();
 });

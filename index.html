@@ -36,29 +36,42 @@
       </div>
     </div>
 
-    <!-- メイン画面 -->
+    <!-- メインバインダー内部 -->
     <div class="inner-page">
-      <header class="app-header">
-        <h2>📍 位置情報シール帳</h2>
-        <p>スポットに近づいてシールを獲得しよう！</p>
-      </header>
+      
+      <!-- ページ切替ヘッダー -->
+      <nav class="page-nav">
+        <button id="btn-page-1" class="nav-tab active">🗺️ マップ</button>
+        <button id="btn-page-2" class="nav-tab">📖 コレクション</button>
+      </nav>
 
-      <!-- 地図表示 -->
-      <div id="map"></div>
+      <!-- 1ページ目: マップ・探索 -->
+      <div class="page-content active" id="page-1">
+        <header class="app-header">
+          <h2>📍 スポット探索</h2>
+          <p>近くのスポットでシールをGET！</p>
+        </header>
 
-      <!-- アクションエリア -->
-      <div class="controls">
-        <button id="locate-me-btn" class="action-btn">現在地を更新する</button>
-        <p class="hint-text">※地図をクリックして新しいシールスポットを設置できます</p>
-      </div>
+        <div id="map"></div>
 
-      <!-- シールコレクション -->
-      <div class="sticker-shelf">
-        <h3>獲得したシールコレクション</h3>
-        <div class="sticker-list" id="myStickerList">
-          <span class="empty-msg" id="emptyMsg">まだシールを獲得していません。</span>
+        <div class="controls">
+          <button id="locate-me-btn" class="action-btn">現在地を更新する</button>
+          <p class="hint-text">※地図をクリックして新しいシールスポットを設置できます</p>
         </div>
       </div>
+
+      <!-- 2ページ目: 純粋なシールコレクション台紙 -->
+      <div class="page-content" id="page-2">
+        <header class="app-header">
+          <h2>✨ My シール帳</h2>
+          <p id="sticker-count-text">獲得したシール: 0枚</p>
+        </header>
+
+        <div class="album-board" id="albumBoard">
+          <span class="empty-album-msg" id="emptyMsg">まだシールがありません。<br>マップで獲得しに行こう！</span>
+        </div>
+      </div>
+
     </div>
 
   </div>

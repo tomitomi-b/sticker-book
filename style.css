@@ -118,7 +118,7 @@ body {
   height: 100%;
   background: #ffffff;
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -126,8 +126,49 @@ body {
   z-index: 5;
 }
 
+/* ナビタブ */
+.page-nav {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.nav-tab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-tab.active {
+  background: #ffffff;
+  color: #6b21a8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* ページコンテンツ切替 */
+.page-content {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.page-content.active {
+  display: flex;
+}
+
 .app-header h2 {
-  font-size: 18px;
+  font-size: 16px;
   color: #1e1035;
 }
 
@@ -138,7 +179,7 @@ body {
 
 #map {
   width: 100%;
-  height: 250px;
+  height: 380px;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   z-index: 1;
@@ -152,13 +193,13 @@ body {
 
 .action-btn {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   background: linear-gradient(135deg, #7e22ce, #6b21a8);
   color: white;
   border: none;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -168,54 +209,70 @@ body {
   text-align: center;
 }
 
-.sticker-shelf {
+/* 2ページ目: シールコレクション台紙 */
+.album-board {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  overflow: hidden;
+  background-color: #fafaf9;
+  background-image: radial-gradient(#e7e5e4 1px, transparent 1px);
+  background-size: 16px 16px;
+  border: 2px dashed #d6d3d1;
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: max-content;
+  gap: 16px;
+  overflow-y: auto;
+  align-content: start;
 }
 
-.sticker-shelf h3 {
+.empty-album-msg {
+  grid-column: 1 / -1;
+  text-align: center;
   font-size: 12px;
-  color: #374151;
+  color: #a8a29e;
+  margin-top: 60px;
+  line-height: 1.6;
 }
 
-.sticker-list {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 8px 4px;
-  min-height: 80px;
-  align-items: center;
-}
-
-.empty-msg {
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-.sticker-item {
+/* 台紙のシール風デザイン */
+.album-sticker-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
+  gap: 6px;
+  background: #ffffff;
+  padding: 8px 6px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+  transform: rotate(-2deg);
+  transition: transform 0.2s;
 }
 
-.sticker-item img {
-  width: 52px;
-  height: 52px;
+.album-sticker-item:nth-child(even) {
+  transform: rotate(2deg);
+}
+
+.album-sticker-item:hover {
+  transform: scale(1.05) rotate(0deg);
+}
+
+.album-sticker-item img {
+  width: 64px;
+  height: 64px;
   object-fit: cover;
   border-radius: 50%;
-  border: 3px solid #a855f7;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  border: 3px solid #f3e8ff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.sticker-item span {
+.album-sticker-item span {
   font-size: 10px;
-  color: #4b5563;
-  max-width: 60px;
+  font-weight: bold;
+  color: #44403c;
+  text-align: center;
+  max-width: 80px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
