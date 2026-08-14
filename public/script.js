@@ -199,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
       myStickers.forEach(sticker => {
         const item = document.createElement('div');
         item.className = 'tray-sticker-item';
+        item.style.touchAction = 'none';
         item.dataset.stickerId = sticker.id;
         item.innerHTML = `
           <img src="${sticker.image}" alt="${sticker.title}">
@@ -225,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     placedStickers.forEach(ps => {
       const stickerEl = document.createElement('div');
       stickerEl.className = 'placed-sticker';
+      stickerEl.style.touchAction = 'none';
       stickerEl.dataset.placedId = ps.instanceId;
       stickerEl.style.left = `${ps.x}%`;
       stickerEl.style.top = `${ps.y}%`;
@@ -292,7 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
           placedStickers.push(newPlacedSticker);
           
-          // トレーから該当のシールを1枚だけ削除
           const index = myStickers.findIndex(s => s.id === stickerData.id);
           if (index !== -1) {
             myStickers.splice(index, 1);
@@ -334,7 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.removeEventListener('pointermove', onPointerMove);
         document.removeEventListener('pointerup', onPointerUp);
 
-        // 台紙の枠外にドロップされた場合はトレーに戻す
         if (
           ev.clientX < boardRect.left ||
           ev.clientX > boardRect.right ||
