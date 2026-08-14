@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // シール帳＆トレーのレンダリング＆ドラッグ処理（スマホ最適化）
+  // シール帳＆トレーのレンダリング＆ドラッグ処理
   // ----------------------------------------------------
   const albumBoard = document.getElementById('albumBoard');
   const stickerTray = document.getElementById('stickerTray');
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAlbumAndTray() {
     if (!stickerTray || !albumBoard) return;
 
-    // トレーのレンダリング
+    // トレーのレンダリング（名前あり）
     stickerTray.innerHTML = '';
     if (stickerCountBadge) stickerCountBadge.textContent = `${myStickers.length}枚`;
 
@@ -230,25 +230,12 @@ document.addEventListener('DOMContentLoaded', () => {
       stickerEl.style.top = `${ps.y}%`;
       stickerEl.style.transform = `translate(-50%, -50%) rotate(${ps.rotation || 0}deg)`;
 
+      // 台紙に貼る時は名前を表示せず、画像のみにする
       stickerEl.innerHTML = `
         <div style="position: relative; display: inline-block;">
           <img src="${ps.image}" alt="${ps.title}">
-          <span>${ps.title}</span>
-          <button class="remove-btn" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 24px; height: 24px; font-size: 13px; font-weight: bold; line-height: 20px; text-align: center; cursor: pointer; padding: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 50; touch-action: manipulation;">×</button>
         </div>
       `;
-
-      // 「×」タップで即座にトレーへ戻す
-      const removeBtn = stickerEl.querySelector('.remove-btn');
-      if (removeBtn) {
-        const handleRemove = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          returnStickerToTray(ps);
-        };
-        removeBtn.addEventListener('click', handleRemove);
-        removeBtn.addEventListener('touchstart', handleRemove);
-      }
 
       setupPlacedStickerDrag(stickerEl, ps);
       albumBoard.appendChild(stickerEl);
@@ -332,8 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let boardRect = null;
 
     stickerEl.addEventListener('pointerdown', (e) => {
-      if (e.target.classList.contains('remove-btn')) return;
-
       isDragging = true;
       try { stickerEl.setPointerCapture(e.pointerId); } catch (err) {}
       boardRect = albumBoard.getBoundingClientRect();
@@ -359,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
         let relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
 
-        // 枠外にドラッグした場合は即座にトレーへ復元
+        // 枠外にドラッグした場合はトレーへ戻す
         if (
           e.clientX < boardRect.left ||
           e.clientX > boardRect.right ||
