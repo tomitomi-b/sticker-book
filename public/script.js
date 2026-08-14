@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // シール帳＆トレーのレンダリング（HTML5 Drag and Drop API 復活版）
+  // タッチ＆マウス両対応の完全自前ドラッグ＆ドロップ実装
   // ----------------------------------------------------
   const albumBoard = document.getElementById('albumBoard');
   const stickerTray = document.getElementById('stickerTray');
@@ -196,15 +196,44 @@ document.addEventListener('DOMContentLoaded', () => {
       myStickers.forEach(sticker => {
         const item = document.createElement('div');
         item.className = 'tray-sticker-item';
-        item.draggable = true;
-        item.dataset.stickerId = sticker.id;
         item.innerHTML = `
           <img src="${sticker.image}" alt="${sticker.title}">
           <span>${sticker.title}</span>
         `;
 
-        item.addEventListener('dragstart', (e) => {
-          e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'tray', sticker }));
+        // トレーのシールを掴んで動かす
+        initCustomDrag(item, { type: 'tray', sticker }, (endX, endY) => {
+          const boardRect = albumBoard.getBoundingClientRect();
+          if (
+            endX >= boardRect.left &&
+            endX <= boardRect.right &&
+            endY >= boardRect.top &&
+            endY <= boardRect.bottom
+          ) {
+            const relX = ((endX - boardRect.left) / boardRect.width) * 100;
+            const relY = ((endY - boardRect.top) / boardRect.height) * 100;
+
+            const newPlacedSticker = {
+              instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
+              stickerId: sticker.id,
+              title: sticker.title,
+              image: sticker.image,
+              x: Math.max(5, Math.min(95, relX)),
+              y: Math.max(5, Math.min(95, relY)),
+              rotation: Math.floor(Math.random() * 16) - 8
+            };
+
+            placedStickers.push(newPlacedSticker);
+            
+            const index = myStickers.findIndex(s => s.id === sticker.id);
+            if (index !== -1) {
+              myStickers.splice(index, 1);
+            }
+
+            localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
+            localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
+            renderAlbumAndTray();
+          }
         });
 
         stickerTray.appendChild(item);
@@ -226,7 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
     placedStickers.forEach(ps => {
       const stickerEl = document.createElement('div');
       stickerEl.className = 'placed-sticker';
-      stickerEl.draggable = true;
       stickerEl.dataset.placedId = ps.instanceId;
       stickerEl.style.left = `${ps.x}%`;
       stickerEl.style.top = `${ps.y}%`;
@@ -234,85 +262,122 @@ document.addEventListener('DOMContentLoaded', () => {
 
       stickerEl.innerHTML = `<img src="${ps.image}" alt="${ps.title}">`;
 
-      stickerEl.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'placed', placedData: ps }));
+      // 台紙上のシールを掴んで移動または外に捨てて回収
+      initCustomDrag(stickerEl, { type: 'placed', placedData: ps }, (endX, endY) => {
+        const boardRect = albumBoard.getBoundingClientRect();
+
+        // 枠外にドロップされたらトレーに戻す
+        if (
+          endX < boardRect.left ||
+          endX > boardRect.right ||
+          endY < boardRect.top ||
+          endY > boardRect.bottom
+        ) {
+          returnStickerToTray(ps);
+          return;
+        }
+
+        // 台紙内なら位置を更新
+        const relX = ((endX - boardRect.left) / boardRect.width) * 100;
+        const relY = ((endY - boardRect.top) / boardRect.height) * 100;
+
+        const target = placedStickers.find(p => p.instanceId === ps.instanceId);
+        if (target) {
+          target.x = Math.max(5, Math.min(95, relX));
+          target.y = Math.max(5, Math.min(95, relY));
+          localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
+          renderAlbumAndTray();
+        }
       });
 
       albumBoard.appendChild(stickerEl);
     });
   }
 
-  if (albumBoard) {
-    albumBoard.addEventListener('dragover', (e) => {
-      e.preventDefault();
-    });
+  // スマホのタッチとPCのマウスの両方で確実につまんで動かせる共通関数
+  function initCustomDrag(el, dragData, onDropCallback) {
+    let ghost = null;
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
 
-    albumBoard.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const rawData = e.dataTransfer.getData('text/plain');
-      if (!rawData) return;
+    const handleStart = (clientX, clientY, e) => {
+      startX = clientX;
+      startY = clientY;
+      isDragging = false;
 
-      try {
-        const data = JSON.parse(rawData);
-        const boardRect = albumBoard.getBoundingClientRect();
-        const relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
-        const relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
-
-        if (data.type === 'tray') {
-          const sticker = data.sticker;
-          const newPlacedSticker = {
-            instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
-            stickerId: sticker.id,
-            title: sticker.title,
-            image: sticker.image,
-            x: Math.max(5, Math.min(95, relX)),
-            y: Math.max(5, Math.min(95, relY)),
-            rotation: Math.floor(Math.random() * 16) - 8
-          };
-
-          placedStickers.push(newPlacedSticker);
-          
-          const index = myStickers.findIndex(s => s.id === sticker.id);
-          if (index !== -1) {
-            myStickers.splice(index, 1);
-          }
-
-          localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
-          localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
-          renderAlbumAndTray();
-        } else if (data.type === 'placed') {
-          const ps = data.placedData;
-          const target = placedStickers.find(p => p.instanceId === ps.instanceId);
-          if (target) {
-            target.x = Math.max(5, Math.min(95, relX));
-            target.y = Math.max(5, Math.min(95, relY));
-            localStorage.setItem('my_placed_stickers', JSON.stringify(placedStrickers = placedStickers));
-            localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
-            renderAlbumAndTray();
+      const onMove = (moveX, moveY, moveEvent) => {
+        if (!isDragging) {
+          if (Math.abs(moveX - startX) > 5 || Math.abs(moveY - startY) > 5) {
+            isDragging = true;
+            ghost = el.cloneNode(true);
+            ghost.style.position = 'fixed';
+            ghost.style.zIndex = '99999';
+            ghost.style.pointerEvents = 'none';
+            ghost.style.opacity = '0.85';
+            ghost.style.transform = 'translate(-50%, -50%) scale(1.2)';
+            document.body.appendChild(ghost);
           }
         }
-      } catch (err) {
-        console.error(err);
-      }
-    });
-  }
 
-  // トレー側でもドロップを受け付けて、台紙からトレーに戻せるようにする
-  if (stickerTray) {
-    stickerTray.addEventListener('dragover', (e) => e.preventDefault());
-    stickerTray.addEventListener('drop', (e) => {
-      e.preventDefault();
-      const rawData = e.dataTransfer.getData('text/plain');
-      if (!rawData) return;
-      try {
-        const data = JSON.parse(rawData);
-        if (data.type === 'placed') {
-          returnStickerToTray(data.placedData);
+        if (isDragging && ghost) {
+          ghost.style.left = `${moveX}px`;
+          ghost.style.top = `${moveY}px`;
+          if (moveEvent.cancelable) moveEvent.preventDefault();
         }
-      } catch (err) {
-        console.error(err);
+      };
+
+      const handleEnd = (endX, endY) => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        window.removeEventListener('touchmove', onTouchMove);
+        window.removeEventListener('touchend', onTouchEnd);
+
+        if (isDragging) {
+          if (ghost) {
+            ghost.remove();
+            ghost = null;
+          }
+          onDropCallback(endX, endY);
+        }
+      };
+
+      const onMouseMove = (ev) => onMove(ev.clientX, ev.clientY, ev);
+      const onMouseUp = (ev) => handleEnd(ev.clientX, ev.clientY);
+
+      const onTouchMove = (ev) => {
+        if (ev.touches.length > 0) {
+          onMove(ev.touches[0].clientX, ev.touches[0].clientY, ev);
+        }
+      };
+      const onTouchEnd = (ev) => {
+        let x = startX;
+        let y = startY;
+        if (ev.changedTouches.length > 0) {
+          x = ev.changedTouches[0].clientX;
+          y = ev.changedTouches[0].clientY;
+        }
+        handleEnd(x, y);
+      };
+
+      if (e.type === 'mousedown') {
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      } else if (e.type === 'touchstart') {
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd);
       }
+    };
+
+    el.addEventListener('mousedown', (e) => {
+      handleStart(e.clientX, e.clientY, e);
     });
+
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        handleStart(e.touches[0].clientX, e.touches[0].clientY, e);
+      }
+    }, { passive: true });
   }
 
   renderAlbumAndTray();
