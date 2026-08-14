@@ -164,12 +164,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // シール帳＆トレーのレンダリング＆ドラッグ処理
+  // シール帳＆トレーのレンダリング＆配置処理（タップ＆ドラッグ両対応）
   // ----------------------------------------------------
   const albumBoard = document.getElementById('albumBoard');
   const stickerTray = document.getElementById('stickerTray');
   const emptyMsg = document.getElementById('emptyMsg');
   const stickerCountBadge = document.getElementById('sticker-count-badge');
+
+  // 現在選択中のシール（スマホのタップ配置用）
+  let selectedStickerForPlacement = null;
 
   function returnStickerToTray(placedData) {
     placedStickers = placedStickers.filter(p => p.instanceId !== placedData.instanceId);
@@ -189,30 +192,82 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAlbumAndTray() {
     if (!stickerTray || !albumBoard) return;
 
-    // トレーのレンダリング（名前あり）
+    // トレーのレンダリング
     stickerTray.innerHTML = '';
     if (stickerCountBadge) stickerCountBadge.textContent = `${myStickers.length}枚`;
 
     if (myStickers.length === 0) {
       stickerTray.innerHTML = '<span class="empty-tray-msg">シールがありません</span>';
+      selectedStickerForPlacement = null;
     } else {
       myStickers.forEach(sticker => {
         const item = document.createElement('div');
         item.className = 'tray-sticker-item';
-        // スクロールを邪魔しないよう、ピンチやデフォルト動作を許可しつつJSで制御
-        item.style.touchAction = 'pan-y'; 
+        if (selectedStickerForPlacement && selectedStickerForPlacement.tempKey === sticker._tempKey) {
+          item.classList.add('selected-for-place');
+        }
+        
+        // 一意のテンポラリーキーを付与
+        if (!sticker._tempKey) sticker._tempKey = Math.random().toString(36).substring(2, 9);
+
         item.dataset.stickerId = sticker.id;
         item.innerHTML = `
           <img src="${sticker.image}" alt="${sticker.title}">
           <span>${sticker.title}</span>
         `;
 
+        // スマホ用タップ選択
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.tray-sticker-item').forEach(el => el.classList.remove('selected-for-place'));
+          selectedStickerForPlacement = sticker;
+          item.classList.add('selected-for-place');
+          alert(`「${sticker.title}」を選択しました。貼りたい台紙の場所をタップしてください！`);
+        });
+
+        // PC用ドラッグ
         setupTrayItemDrag(item, sticker);
         stickerTray.appendChild(item);
       });
     }
 
     renderPlacedStickers();
+  }
+
+  // 台紙をタップした時の配置（スマホ用）
+  if (albumBoard) {
+    albumBoard.addEventListener('click', (e) => {
+      // 台紙上に貼られた既存シールやゴミ箱などのクリック時はスルー
+      if (e.target.closest('.placed-sticker')) return;
+
+      if (selectedStickerForPlacement) {
+        const boardRect = albumBoard.getBoundingClientRect();
+        const relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
+        const relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
+
+        const newPlacedSticker = {
+          instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
+          stickerId: selectedStickerForPlacement.id,
+          title: selectedStickerForPlacement.title,
+          image: selectedStickerForPlacement.image,
+          x: relX,
+          y: relY,
+          rotation: Math.floor(Math.random() * 16) - 8
+        };
+
+        placedStickers.push(newPlacedSticker);
+        
+        const index = myStickers.findIndex(s => s._tempKey === selectedStickerForPlacement._tempKey);
+        if (index !== -1) {
+          myStickers.splice(index, 1);
+        }
+
+        selectedStickerForPlacement = null;
+
+        localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
+        localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
+        renderAlbumAndTray();
+      }
+    });
   }
 
   function renderPlacedStickers() {
@@ -227,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
     placedStickers.forEach(ps => {
       const stickerEl = document.createElement('div');
       stickerEl.className = 'placed-sticker';
-      stickerEl.style.touchAction = 'none';
       stickerEl.dataset.placedId = ps.instanceId;
       stickerEl.style.left = `${ps.x}%`;
       stickerEl.style.top = `${ps.y}%`;
@@ -235,12 +289,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       stickerEl.innerHTML = `<img src="${ps.image}" alt="${ps.title}">`;
 
+      // 貼られたシールをタップしたらトレーに戻す（または移動）
+      stickerEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`「${ps.title}」をシール一覧（トレー）に戻しますか？`)) {
+          returnStickerToTray(ps);
+        }
+      });
+
       setupPlacedStickerDrag(stickerEl, ps);
       albumBoard.appendChild(stickerEl);
     });
   }
 
-  // トレーから台紙へドラッグ
+  // トレーから台紙へドラッグ（PC用）
   function setupTrayItemDrag(itemEl, stickerData) {
     itemEl.addEventListener('pointerdown', (e) => {
       let startX = e.clientX;
@@ -249,11 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let ghostEl = null;
 
       const onPointerMove = (ev) => {
-        const moveX = Math.abs(ev.clientX - startX);
-        const moveY = Math.abs(ev.clientY - startY);
-
-        // 少し動かしたら「ドラッグ開始」と判定してスクロールより優先させる
-        if (!isDragging && (moveX > 5 || moveY > 5)) {
+        if (!isDragging && (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5)) {
           isDragging = true;
           try { itemEl.setPointerCapture(e.pointerId); } catch (err) {}
 
@@ -269,7 +327,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isDragging && ghostEl) {
           ghostEl.style.left = `${ev.clientX}px`;
           ghostEl.style.top = `${ev.clientY}px`;
-          ev.preventDefault(); // 画面全体のスクロールを抑制
         }
       };
 
@@ -278,11 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.removeEventListener('pointerup', onPointerUp);
 
         if (!isDragging) return;
-
-        if (ghostEl) {
-          ghostEl.remove();
-          ghostEl = null;
-        }
+        if (ghostEl) { ghostEl.remove(); ghostEl = null; }
 
         const boardRect = albumBoard.getBoundingClientRect();
         if (
@@ -306,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           placedStickers.push(newPlacedSticker);
           
-          const index = myStickers.findIndex(s => s.id === stickerData.id);
+          const index = myStickers.findIndex(s => s._tempKey === stickerData._tempKey);
           if (index !== -1) {
             myStickers.splice(index, 1);
           }
@@ -322,30 +375,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 台紙上でのドラッグ移動 & 枠外ドラッグでトレーへ戻す
+  // 台紙上でのドラッグ移動 & 枠外ドラッグ
   function setupPlacedStickerDrag(stickerEl, placedData) {
     stickerEl.addEventListener('pointerdown', (e) => {
-      let isDragging = true;
-      try { stickerEl.setPointerCapture(e.pointerId); } catch (err) {}
+      let isDragging = false;
+      let startX = e.clientX;
+      let startY = e.clientY;
       const boardRect = albumBoard.getBoundingClientRect();
-      stickerEl.style.zIndex = '100';
 
       const onPointerMove = (ev) => {
-        if (!isDragging) return;
-        let relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
-        let relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
-        stickerEl.style.left = `${relX}%`;
-        stickerEl.style.top = `${relY}%`;
-        ev.preventDefault();
+        if (!isDragging && (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5)) {
+          isDragging = true;
+          try { stickerEl.setPointerCapture(e.pointerId); } catch (err) {}
+          stickerEl.style.zIndex = '100';
+        }
+
+        if (isDragging) {
+          let relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
+          let relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
+          stickerEl.style.left = `${relX}%`;
+          stickerEl.style.top = `${relY}%`;
+        }
       };
 
       const onPointerUp = (ev) => {
-        if (!isDragging) return;
-        isDragging = false;
-        stickerEl.style.zIndex = '10';
-
         document.removeEventListener('pointermove', onPointerMove);
         document.removeEventListener('pointerup', onPointerUp);
+
+        if (!isDragging) return; // ドラッグしていなければタップイベントに任せる
+        stickerEl.style.zIndex = '10';
 
         if (
           ev.clientX < boardRect.left ||
