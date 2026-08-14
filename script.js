@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ページ切り替え（マップ ↔ コレクション）
+  // ページ切り替え
   const btnPage1 = document.getElementById('btn-page-1');
   const btnPage2 = document.getElementById('btn-page-2');
   const page1 = document.getElementById('page-1');
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPage1.classList.remove('active');
     page2.classList.add('active');
     page1.classList.remove('active');
-    renderAlbumBoard();
+    renderAlbumAndTray();
   });
 
   // ユーザーIDの生成/取得
@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let userLocation = null;
   let myStickers = JSON.parse(localStorage.getItem('my_collected_stickers') || '[]');
+  let placedStickers = JSON.parse(localStorage.getItem('my_placed_stickers') || '[]');
   let mapSpots = JSON.parse(localStorage.getItem('map_sticker_spots') || '[]');
 
   // サンプルデータ
@@ -80,30 +81,195 @@ document.addEventListener('DOMContentLoaded', () => {
     return R * c;
   }
 
-  // 2ページ目: アルバム台紙のレンダリング
-  function renderAlbumBoard() {
-    const boardEl = document.getElementById('albumBoard');
-    const countEl = document.getElementById('sticker-count-text');
-    boardEl.innerHTML = '';
+  // ----------------------------------------------------
+  // 2ページ目: シール帳＆トレーのレンダリング＆ドラッグ処理
+  // ----------------------------------------------------
+  const albumBoard = document.getElementById('albumBoard');
+  const stickerTray = document.getElementById('stickerTray');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const stickerCountBadge = document.getElementById('sticker-count-badge');
 
-    countEl.textContent = `獲得したシール: ${myStickers.length}枚`;
+  function renderAlbumAndTray() {
+    // トレーのレンダリング
+    stickerTray.innerHTML = '';
+    stickerCountBadge.textContent = `${myStickers.length}枚`;
 
     if (myStickers.length === 0) {
-      boardEl.innerHTML = '<span class="empty-album-msg">まだシールがありません。<br>マップで獲得しに行こう！</span>';
-      return;
+      stickerTray.innerHTML = '<span class="empty-tray-msg">シールがありません</span>';
+    } else {
+      myStickers.forEach(sticker => {
+        const item = document.createElement('div');
+        item.className = 'tray-sticker-item';
+        item.dataset.stickerId = sticker.id;
+        item.innerHTML = `
+          <img src="${sticker.image}" alt="${sticker.title}">
+          <span>${sticker.title}</span>
+        `;
+
+        // トレーからのドラッグイベント設定
+        setupTrayItemDrag(item, sticker);
+        stickerTray.appendChild(item);
+      });
     }
 
-    myStickers.forEach(s => {
-      const item = document.createElement('div');
-      item.className = 'album-sticker-item';
-      item.innerHTML = `
-        <img src="${s.image}" alt="${s.title}">
-        <span>${s.title}</span>
+    // 台紙上のシールを再描画
+    renderPlacedStickers();
+  }
+
+  function renderPlacedStickers() {
+    // 既存の貼られたシール要素をクリア
+    const existingStickers = albumBoard.querySelectorAll('.placed-sticker');
+    existingStickers.forEach(el => el.remove());
+
+    if (placedStickers.length > 0) {
+      emptyMsg.style.display = 'none';
+    } else {
+      emptyMsg.style.display = 'block';
+    }
+
+    placedStickers.forEach(ps => {
+      const stickerEl = document.createElement('div');
+      stickerEl.className = 'placed-sticker';
+      stickerEl.dataset.placedId = ps.instanceId;
+      stickerEl.style.left = `${ps.x}%`;
+      stickerEl.style.top = `${ps.y}%`;
+      stickerEl.style.transform = `translate(-50%, -50%) rotate(${ps.rotation || 0}deg)`;
+
+      stickerEl.innerHTML = `
+        <img src="${ps.image}" alt="${ps.title}">
+        <span>${ps.title}</span>
       `;
-      boardEl.appendChild(item);
+
+      // 台紙上でのドラッグ移動イベント設定
+      setupPlacedStickerDrag(stickerEl, ps);
+      albumBoard.appendChild(stickerEl);
     });
   }
 
+  // トレーから台紙へドラッグ
+  function setupTrayItemDrag(itemEl, stickerData) {
+    let isDragging = false;
+    let ghostEl = null;
+
+    itemEl.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      itemEl.setPointerCapture(e.pointerId);
+
+      // ドラッグ中の見た目クローンを作成
+      ghostEl = itemEl.cloneNode(true);
+      ghostEl.style.position = 'fixed';
+      ghostEl.style.zIndex = '1000';
+      ghostEl.style.opacity = '0.85';
+      ghostEl.style.pointerEvents = 'none';
+      ghostEl.style.transform = 'translate(-50%, -50%) scale(1.1)';
+      document.body.appendChild(ghostEl);
+
+      updateGhostPosition(e);
+    });
+
+    itemEl.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      updateGhostPosition(e);
+    });
+
+    itemEl.addEventListener('pointerup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+
+      if (ghostEl) {
+        ghostEl.remove();
+        ghostEl = null;
+      }
+
+      // ドロップ判定（albumBoardの領域内か）
+      const boardRect = albumBoard.getBoundingClientRect();
+      if (
+        e.clientX >= boardRect.left &&
+        e.clientX <= boardRect.right &&
+        e.clientY >= boardRect.top &&
+        e.clientY <= boardRect.bottom
+      ) {
+        // 台紙内での相対パーセント座標を計算
+        const relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
+        const relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
+        const randomRotation = Math.floor(Math.random() * 16) - 8; // -8deg ~ +8deg
+
+        const newPlacedSticker = {
+          instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
+          stickerId: stickerData.id,
+          title: stickerData.title,
+          image: stickerData.image,
+          x: relX,
+          y: relY,
+          rotation: randomRotation
+        };
+
+        placedStickers.push(newPlacedSticker);
+        localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
+        renderPlacedStickers();
+      }
+    });
+
+    function updateGhostPosition(e) {
+      if (ghostEl) {
+        ghostEl.style.left = `${e.clientX}px`;
+        ghostEl.style.top = `${e.clientY}px`;
+      }
+    }
+  }
+
+  // 台紙内での移動ドラッグ
+  function setupPlacedStickerDrag(stickerEl, placedData) {
+    let isDragging = false;
+    let boardRect = null;
+
+    stickerEl.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      stickerEl.setPointerCapture(e.pointerId);
+      boardRect = albumBoard.getBoundingClientRect();
+      stickerEl.style.zIndex = '100';
+    });
+
+    stickerEl.addEventListener('pointermove', (e) => {
+      if (!isDragging || !boardRect) return;
+
+      let relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
+      let relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
+
+      // 範囲制限 (0% ~ 100%)
+      relX = Math.max(0, Math.min(100, relX));
+      relY = Math.max(0, Math.min(100, relY));
+
+      stickerEl.style.left = `${relX}%`;
+      stickerEl.style.top = `${relY}%`;
+    });
+
+    stickerEl.addEventListener('pointerup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      stickerEl.style.zIndex = '10';
+
+      if (boardRect) {
+        let relX = ((e.clientX - boardRect.left) / boardRect.width) * 100;
+        let relY = ((e.clientY - boardRect.top) / boardRect.height) * 100;
+
+        relX = Math.max(0, Math.min(100, relX));
+        relY = Math.max(0, Math.min(100, relY));
+
+        // 座標更新＆保存
+        const target = placedStickers.find(p => p.instanceId === placedData.instanceId);
+        if (target) {
+          target.x = relX;
+          target.y = relY;
+          localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
+        }
+      }
+    });
+  }
+
+  // ----------------------------------------------------
+  // マップ・スポット関連処理
+  // ----------------------------------------------------
   const spotMarkers = [];
   function renderMapSpots() {
     spotMarkers.forEach(m => map.removeLayer(m));
@@ -154,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
           getBtn.addEventListener('click', () => {
             myStickers.push(spot);
             localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
-            alert(`🎉 「${spot.title}」のシールを獲得しました！\n「📖 コレクション」ページに追加されました！`);
+            alert(`🎉 「${spot.title}」のシールを獲得しました！\n「📖 コレクション」ページで貼ってみよう！`);
             map.closePopup();
             renderMapSpots();
           });

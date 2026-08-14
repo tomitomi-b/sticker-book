@@ -62,13 +62,25 @@
 
       <!-- 2ページ目: 純粋なシールコレクション台紙 -->
       <div class="page-content" id="page-2">
-        <header class="app-header">
+        <header class="app-header app-header-album">
           <h2>✨ My シール帳</h2>
-          <p id="sticker-count-text">獲得したシール: 0枚</p>
+          <p class="album-hint">下のトレーからシールをドラッグして貼ってね！</p>
         </header>
 
+        <!-- 自由に貼れるキャンバス台紙 -->
         <div class="album-board" id="albumBoard">
-          <span class="empty-album-msg" id="emptyMsg">まだシールがありません。<br>マップで獲得しに行こう！</span>
+          <span class="empty-album-msg" id="emptyMsg">ここにシールをペタペタ貼ろう！</span>
+        </div>
+
+        <!-- 下部の所持シールトレー -->
+        <div class="sticker-tray-section">
+          <div class="tray-header">
+            <span>獲得したシール</span>
+            <span id="sticker-count-badge" class="count-badge">0枚</span>
+          </div>
+          <div class="sticker-tray" id="stickerTray">
+            <span class="empty-tray-msg">シールがありません</span>
+          </div>
         </div>
       </div>
 
