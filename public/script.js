@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // シール帳＆トレーのレンダリング＆ポインタードラッグ処理（スマホ・PC完全対応）
+  // シール帳＆トレーのレンダリング＆タッチ・ポインタードラッグ処理
   // ----------------------------------------------------
   const albumBoard = document.getElementById('albumBoard');
   const stickerTray = document.getElementById('stickerTray');
@@ -187,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAlbumAndTray() {
     if (!stickerTray || !albumBoard) return;
 
-    // トレーのレンダリング
     stickerTray.innerHTML = '';
     if (stickerCountBadge) stickerCountBadge.textContent = `${myStickers.length}枚`;
 
@@ -203,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span>${sticker.title}</span>
         `;
 
-        setupTrayItemPointerDrag(item, sticker);
+        setupTrayItemDrag(item, sticker);
         stickerTray.appendChild(item);
       });
     }
@@ -230,21 +229,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
       stickerEl.innerHTML = `<img src="${ps.image}" alt="${ps.title}">`;
 
-      setupPlacedStickerPointerDrag(stickerEl, ps);
+      setupPlacedStickerDrag(stickerEl, ps);
       albumBoard.appendChild(stickerEl);
     });
   }
 
-  // トレーから台紙へのポインタードラッグ（スマホ＆PC対応）
-  function setupTrayItemPointerDrag(itemEl, stickerData) {
-    itemEl.addEventListener('pointerdown', (e) => {
-      let startX = e.clientX;
-      let startY = e.clientY;
+  // トレーから台紙へのタッチ＆マウスドラッグ（iOS Safari完全対応版）
+  function setupTrayItemDrag(itemEl, stickerData) {
+    const onStart = (clientX, clientY, e) => {
+      let startX = clientX;
+      let startY = clientY;
       let isDragging = false;
       let ghostEl = null;
 
-      const onPointerMove = (ev) => {
-        if (!isDragging && (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4)) {
+      // iOSで画面がスクロールするのを防ぐ
+      document.body.style.overflow = 'hidden';
+
+      const onMove = (moveClientX, moveClientY, ev) => {
+        if (!isDragging && (Math.abs(moveClientX - startX) > 3 || Math.abs(moveClientY - startY) > 3)) {
           isDragging = true;
           ghostEl = itemEl.cloneNode(true);
           ghostEl.style.position = 'fixed';
@@ -256,15 +258,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (isDragging && ghostEl) {
-          ghostEl.style.left = `${ev.clientX}px`;
-          ghostEl.style.top = `${ev.clientY}px`;
-          ev.preventDefault();
+          ghostEl.style.left = `${moveClientX}px`;
+          ghostEl.style.top = `${moveClientY}px`;
+          if (ev.cancelable) ev.preventDefault();
         }
       };
 
-      const onPointerUp = (ev) => {
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('pointerup', onPointerUp);
+      const onEnd = (endClientX, endClientY) => {
+        document.body.style.overflow = '';
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        window.removeEventListener('touchmove', onTouchMove);
+        window.removeEventListener('touchend', onTouchEnd);
 
         if (!isDragging) {
           if (ghostEl) ghostEl.remove();
@@ -278,15 +283,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const boardRect = albumBoard.getBoundingClientRect();
 
-        // 台紙の範囲内か判定
         if (
-          ev.clientX >= boardRect.left &&
-          ev.clientX <= boardRect.right &&
-          ev.clientY >= boardRect.top &&
-          ev.clientY <= boardRect.bottom
+          endClientX >= boardRect.left &&
+          endClientX <= boardRect.right &&
+          endClientY >= boardRect.top &&
+          endClientY <= boardRect.bottom
         ) {
-          const relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
-          const relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
+          const relX = ((endClientX - boardRect.left) / boardRect.width) * 100;
+          const relY = ((endClientY - boardRect.top) / boardRect.height) * 100;
 
           const newPlacedSticker = {
             instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
@@ -311,54 +315,87 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      window.addEventListener('pointermove', onPointerMove, { passive: false });
-      window.addEventListener('pointerup', onPointerUp);
-    });
+      const onMouseMove = (ev) => onMove(ev.clientX, ev.clientY, ev);
+      const onMouseUp = (ev) => onEnd(ev.clientX, ev.clientY);
+      const onTouchMove = (ev) => {
+        if (ev.touches.length > 0) {
+          onMove(ev.touches[0].clientX, ev.touches[0].clientY, ev);
+        }
+      };
+      const onTouchEnd = (ev) => {
+        let clientX = startX;
+        let clientY = startY;
+        if (ev.changedTouches.length > 0) {
+          clientX = ev.changedTouches[0].clientX;
+          clientY = ev.changedTouches[0].clientY;
+        }
+        onEnd(clientX, clientY);
+      };
+
+      if (e.type === 'mousedown') {
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      } else if (e.type === 'touchstart') {
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd);
+      }
+    };
+
+    itemEl.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY, e));
+    itemEl.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        onStart(e.touches[0].clientX, e.touches[0].clientY, e);
+      }
+    }, { passive: true });
   }
 
-  // 台紙上のシール移動 ＆ 枠外へドロップでトレーに戻すポインタードラッグ
-  function setupPlacedStickerPointerDrag(stickerEl, placedData) {
-    stickerEl.addEventListener('pointerdown', (e) => {
-      let startX = e.clientX;
-      let startY = e.clientY;
+  // 台紙上のシール移動 ＆ 枠外ドロップでトレーに戻す処理
+  function setupPlacedStickerDrag(stickerEl, placedData) {
+    const onStart = (clientX, clientY, e) => {
+      let startX = clientX;
+      let startY = clientY;
       let isDragging = false;
       const boardRect = albumBoard.getBoundingClientRect();
 
-      const onPointerMove = (ev) => {
-        if (!isDragging && (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4)) {
+      document.body.style.overflow = 'hidden';
+
+      const onMove = (moveClientX, moveClientY, ev) => {
+        if (!isDragging && (Math.abs(moveClientX - startX) > 3 || Math.abs(moveClientY - startY) > 3)) {
           isDragging = true;
           stickerEl.style.zIndex = '1000';
         }
 
         if (isDragging) {
-          let relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
-          let relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
+          let relX = ((moveClientX - boardRect.left) / boardRect.width) * 100;
+          let relY = ((moveClientY - boardRect.top) / boardRect.height) * 100;
           stickerEl.style.left = `${relX}%`;
           stickerEl.style.top = `${relY}%`;
-          ev.preventDefault();
+          if (ev.cancelable) ev.preventDefault();
         }
       };
 
-      const onPointerUp = (ev) => {
-        window.removeEventListener('pointermove', onPointerMove);
-        window.removeEventListener('pointerup', onPointerUp);
+      const onEnd = (endClientX, endClientY) => {
+        document.body.style.overflow = '';
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        window.removeEventListener('touchmove', onTouchMove);
+        window.removeEventListener('touchend', onTouchEnd);
 
         if (!isDragging) return;
         stickerEl.style.zIndex = '10';
 
-        // 台紙の外（枠外）にドロップされた場合はトレーに戻す
         if (
-          ev.clientX < boardRect.left ||
-          ev.clientX > boardRect.right ||
-          ev.clientY < boardRect.top ||
-          ev.clientY > boardRect.bottom
+          endClientX < boardRect.left ||
+          endClientX > boardRect.right ||
+          endClientY < boardRect.top ||
+          endClientY > boardRect.bottom
         ) {
           returnStickerToTray(placedData);
           return;
         }
 
-        let relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
-        let relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
+        let relX = ((endClientX - boardRect.left) / boardRect.width) * 100;
+        let relY = ((endClientY - boardRect.top) / boardRect.height) * 100;
 
         const target = placedStickers.find(p => p.instanceId === placedData.instanceId);
         if (target) {
@@ -368,9 +405,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      window.addEventListener('pointermove', onPointerMove, { passive: false });
-      window.addEventListener('pointerup', onPointerUp);
-    });
+      const onMouseMove = (ev) => onMove(ev.clientX, ev.clientY, ev);
+      const onMouseUp = (ev) => onEnd(ev.clientX, ev.clientY);
+      const onTouchMove = (ev) => {
+        if (ev.touches.length > 0) {
+          onMove(ev.touches[0].clientX, ev.touches[0].clientY, ev);
+        }
+      };
+      const onTouchEnd = (ev) => {
+        let clientX = startX;
+        let clientY = startY;
+        if (ev.changedTouches.length > 0) {
+          clientX = ev.changedTouches[0].clientX;
+          clientY = ev.changedTouches[0].clientY;
+        }
+        onEnd(clientX, clientY);
+      };
+
+      if (e.type === 'mousedown') {
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      } else if (e.type === 'touchstart') {
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd);
+      }
+    };
+
+    stickerEl.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY, e));
+    stickerEl.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        onStart(e.touches[0].clientX, e.touches[0].clientY, e);
+      }
+    }, { passive: true });
   }
 
   renderAlbumAndTray();
