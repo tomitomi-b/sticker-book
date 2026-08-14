@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // シール帳＆トレーのレンダリング＆ドラッグ処理
+  // シール帳＆トレーのレンダリング＆ポインタードラッグ処理（スマホ・PC完全対応）
   // ----------------------------------------------------
   const albumBoard = document.getElementById('albumBoard');
   const stickerTray = document.getElementById('stickerTray');
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span>${sticker.title}</span>
         `;
 
-        setupTrayItemTouchDrag(item, sticker);
+        setupTrayItemPointerDrag(item, sticker);
         stickerTray.appendChild(item);
       });
     }
@@ -230,26 +230,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       stickerEl.innerHTML = `<img src="${ps.image}" alt="${ps.title}">`;
 
-      setupPlacedStickerTouchDrag(stickerEl, ps);
+      setupPlacedStickerPointerDrag(stickerEl, ps);
       albumBoard.appendChild(stickerEl);
     });
   }
 
-  // スマホ対応：トレーから台紙へのタッチドラッグ
-  function setupTrayItemTouchDrag(itemEl, stickerData) {
-    itemEl.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      let startX = touch.clientX;
-      let startY = touch.clientY;
+  // トレーから台紙へのポインタードラッグ（スマホ＆PC対応）
+  function setupTrayItemPointerDrag(itemEl, stickerData) {
+    itemEl.addEventListener('pointerdown', (e) => {
+      let startX = e.clientX;
+      let startY = e.clientY;
       let isDragging = false;
       let ghostEl = null;
 
-      const onTouchMove = (ev) => {
-        const t = ev.touches[0];
-        const moveX = Math.abs(t.clientX - startX);
-        const moveY = Math.abs(t.clientY - startY);
-
-        if (!isDragging && (moveX > 4 || moveY > 4)) {
+      const onPointerMove = (ev) => {
+        if (!isDragging && (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4)) {
           isDragging = true;
           ghostEl = itemEl.cloneNode(true);
           ghostEl.style.position = 'fixed';
@@ -261,40 +256,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (isDragging && ghostEl) {
-          ghostEl.style.left = `${t.clientX}px`;
-          ghostEl.style.top = `${t.clientY}px`;
+          ghostEl.style.left = `${ev.clientX}px`;
+          ghostEl.style.top = `${ev.clientY}px`;
           ev.preventDefault();
         }
       };
 
-      const onTouchEnd = (ev) => {
-        document.removeEventListener('touchmove', onTouchMove);
-        document.removeEventListener('touchend', onTouchEnd);
+      const onPointerUp = (ev) => {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
 
         if (!isDragging) {
           if (ghostEl) ghostEl.remove();
           return;
         }
 
-        const touchEnd = ev.changedTouches[0] || (ev.touches && ev.touches[0]);
-        
         if (ghostEl) {
           ghostEl.remove();
           ghostEl = null;
         }
 
-        if (!touchEnd) return;
-
         const boardRect = albumBoard.getBoundingClientRect();
 
+        // 台紙の範囲内か判定
         if (
-          touchEnd.clientX >= boardRect.left &&
-          touchEnd.clientX <= boardRect.right &&
-          touchEnd.clientY >= boardRect.top &&
-          touchEnd.clientY <= boardRect.bottom
+          ev.clientX >= boardRect.left &&
+          ev.clientX <= boardRect.right &&
+          ev.clientY >= boardRect.top &&
+          ev.clientY <= boardRect.bottom
         ) {
-          const relX = ((touchEnd.clientX - boardRect.left) / boardRect.width) * 100;
-          const relY = ((touchEnd.clientY - boardRect.top) / boardRect.height) * 100;
+          const relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
+          const relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
 
           const newPlacedSticker = {
             instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
@@ -319,160 +311,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      document.addEventListener('touchmove', onTouchMove, { passive: false });
-      document.addEventListener('touchend', onTouchEnd);
-    });
-
-    // マウス操作（PC用フォールバック）
-    itemEl.addEventListener('mousedown', (e) => {
-      let startX = e.clientX;
-      let startY = e.clientY;
-      let isDragging = false;
-      let ghostEl = null;
-
-      const onMouseMove = (ev) => {
-        if (!isDragging && (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4)) {
-          isDragging = true;
-          ghostEl = itemEl.cloneNode(true);
-          ghostEl.style.position = 'fixed';
-          ghostEl.style.zIndex = '9999';
-          ghostEl.style.opacity = '0.9';
-          ghostEl.style.pointerEvents = 'none';
-          ghostEl.style.transform = 'translate(-50%, -50%) scale(1.15)';
-          document.body.appendChild(ghostEl);
-        }
-        if (isDragging && ghostEl) {
-          ghostEl.style.left = `${ev.clientX}px`;
-          ghostEl.style.top = `${ev.clientY}px`;
-        }
-      };
-
-      const onMouseUp = (ev) => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        if (!isDragging) return;
-        if (ghostEl) ghostEl.remove();
-
-        const boardRect = albumBoard.getBoundingClientRect();
-        if (
-          ev.clientX >= boardRect.left && ev.clientX <= boardRect.right &&
-          ev.clientY >= boardRect.top && ev.clientY <= boardRect.bottom
-        ) {
-          const relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
-          const relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
-
-          placedStickers.push({
-            instanceId: 'placed-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
-            stickerId: stickerData.id,
-            title: stickerData.title,
-            image: stickerData.image,
-            x: relX, y: relY,
-            rotation: Math.floor(Math.random() * 16) - 8
-          });
-
-          const index = myStickers.findIndex(s => s.id === stickerData.id);
-          if (index !== -1) myStickers.splice(index, 1);
-
-          localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
-          localStorage.setItem('my_collected_stickers', JSON.stringify(myStickers));
-          renderAlbumAndTray();
-        }
-      };
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp);
     });
   }
 
-  // スマホ対応：台紙上のシール移動 & 枠外へ持って行くとトレーに戻すタッチドラッグ
-  function setupPlacedStickerTouchDrag(stickerEl, placedData) {
-    stickerEl.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      let startX = touch.clientX;
-      let startY = touch.clientY;
+  // 台紙上のシール移動 ＆ 枠外へドロップでトレーに戻すポインタードラッグ
+  function setupPlacedStickerPointerDrag(stickerEl, placedData) {
+    stickerEl.addEventListener('pointerdown', (e) => {
+      let startX = e.clientX;
+      let startY = e.clientY;
       let isDragging = false;
       const boardRect = albumBoard.getBoundingClientRect();
 
-      const onTouchMove = (ev) => {
-        const t = ev.touches[0];
-        if (!isDragging && (Math.abs(t.clientX - startX) > 4 || Math.abs(t.clientY - startY) > 4)) {
+      const onPointerMove = (ev) => {
+        if (!isDragging && (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4)) {
           isDragging = true;
           stickerEl.style.zIndex = '1000';
         }
 
         if (isDragging) {
-          let relX = ((t.clientX - boardRect.left) / boardRect.width) * 100;
-          let relY = ((t.clientY - boardRect.top) / boardRect.height) * 100;
+          let relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
+          let relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
           stickerEl.style.left = `${relX}%`;
           stickerEl.style.top = `${relY}%`;
           ev.preventDefault();
         }
       };
 
-      const onTouchEnd = (ev) => {
-        document.removeEventListener('touchmove', onTouchMove);
-        document.removeEventListener('touchend', onTouchEnd);
+      const onPointerUp = (ev) => {
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
 
         if (!isDragging) return;
         stickerEl.style.zIndex = '10';
 
-        const t = ev.changedTouches[0] || (ev.touches && ev.touches[0]);
-        if (!t) return;
-
+        // 台紙の外（枠外）にドロップされた場合はトレーに戻す
         if (
-          t.clientX < boardRect.left ||
-          t.clientX > boardRect.right ||
-          t.clientY < boardRect.top ||
-          t.clientY > boardRect.bottom
-        ) {
-          returnStickerToTray(placedData);
-          return;
-        }
-
-        let relX = ((t.clientX - boardRect.left) / boardRect.width) * 100;
-        let relY = ((t.clientY - boardRect.top) / boardRect.height) * 100;
-
-        const target = placedStickers.find(p => p.instanceId === placedData.instanceId);
-        if (target) {
-          target.x = relX;
-          target.y = relY;
-          localStorage.setItem('my_placed_stickers', JSON.stringify(placedStickers));
-        }
-      };
-
-      document.addEventListener('touchmove', onTouchMove, { passive: false });
-      document.addEventListener('touchend', onTouchEnd);
-    });
-
-    // マウス操作（PC用フォールバック）
-    stickerEl.addEventListener('mousedown', (e) => {
-      let isDragging = false;
-      let startX = e.clientX;
-      let startY = e.clientY;
-      const boardRect = albumBoard.getBoundingClientRect();
-
-      const onMouseMove = (ev) => {
-        if (!isDragging && (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4)) {
-          isDragging = true;
-          stickerEl.style.zIndex = '1000';
-        }
-        if (isDragging) {
-          let relX = ((ev.clientX - boardRect.left) / boardRect.width) * 100;
-          let relY = ((ev.clientY - boardRect.top) / boardRect.height) * 100;
-          stickerEl.style.left = `${relX}%`;
-          stickerEl.style.top = `${relY}%`;
-        }
-      };
-
-      const onMouseUp = (ev) => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        if (!isDragging) return;
-        stickerEl.style.zIndex = '10';
-
-        if (
-          ev.clientX < boardRect.left || ev.clientX > boardRect.right ||
-          ev.clientY < boardRect.top || ev.clientY > boardRect.bottom
+          ev.clientX < boardRect.left ||
+          ev.clientX > boardRect.right ||
+          ev.clientY < boardRect.top ||
+          ev.clientY > boardRect.bottom
         ) {
           returnStickerToTray(placedData);
           return;
@@ -489,8 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp);
     });
   }
 
