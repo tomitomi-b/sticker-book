@@ -3,79 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>シール帳</title>
+  <title>位置情報シール帳</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
-  <div class="sparkle-bg"></div>
+  <div class="bg-gradient"></div>
 
-  <div class="book-viewport">
-    <div class="book-base">
-      
-      <!-- 表紙（最初は閉じている状態） -->
-      <div class="binder-cover" id="cover">
-        <div class="ring-holes">
-          <div class="hole"></div>
-          <div class="hole"></div>
-          <div class="hole"></div>
-          <div class="hole"></div>
-        </div>
-
-        <div class="header-zone">
-          <h1 class="title-main">Sticker Book</h1>
-          <p class="title-sub">COLLECTION ALBUM</p>
-          <div class="divider-line"></div>
-        </div>
-
-        <!-- シンプルな三角形 -->
-        <div class="triangle-wrapper">
-          <div class="simple-triangle"></div>
-        </div>
-
-        <!-- オウム -->
-        <div class="parrot-wrapper">
-          <svg class="parrot-svg" viewBox="0 0 100 100">
-            <ellipse cx="50" cy="55" rx="16" ry="28" fill="#7b2cbf" />
-            <ellipse cx="48" cy="58" rx="10" ry="20" fill="#9d4edd" />
-            <circle cx="50" cy="28" r="14" fill="#7b2cbf" />
-            <path d="M48,15 C45,5 40,8 38,12" stroke="#ff9e00" stroke-width="3" fill="none" stroke-linecap="round"/>
-            <path d="M52,15 C52,3 48,5 45,8" stroke="#ff0054" stroke-width="3" fill="none" stroke-linecap="round"/>
-            <path d="M55,16 C58,6 55,7 51,10" stroke="#3a86ff" stroke-width="3" fill="none" stroke-linecap="round"/>
-            <circle cx="44" cy="26" r="4.5" fill="#ffffff" />
-            <circle cx="43" cy="26" r="2" fill="#000000" />
-            <path d="M38,28 Q28,30 32,40 Q40,36 40,32 Z" fill="#ff9e00" />
-            <path d="M38,32 Q32,34 35,38 Z" fill="#e07a5f" />
-            <path d="M58,75 L68,98 L60,82 Z" fill="#ff0054" />
-            <path d="M54,78 L58,100 L54,82 Z" fill="#3a86ff" />
-            <rect x="15" y="76" width="70" height="4" rx="2" fill="#8d99ae" />
+  <div class="book-container">
+    
+    <!-- 表紙 (カバー) -->
+    <div class="binder-cover" id="cover">
+      <div class="cover-content">
+        <div class="logo-triangle"></div>
+        <h1 class="title-main">COLLECTION ALBUM</h1>
+        <p class="title-sub">STATIONERY & STICKERS</p>
+        
+        <div class="parrot-icon">
+          <svg viewBox="0 0 100 100">
+            <ellipse cx="50" cy="55" rx="16" ry="28" fill="#581c87" />
+            <circle cx="50" cy="28" r="14" fill="#581c87" />
+            <circle cx="44" cy="26" r="4" fill="#fff" />
+            <circle cx="43" cy="26" r="2" fill="#000" />
+            <path d="M38,28 Q28,30 32,40 Q40,36 40,32 Z" fill="#f59e0b" />
+            <path d="M58,75 L68,98 L60,82 Z" fill="#ec4899" />
+            <rect x="15" y="76" width="70" height="4" rx="2" fill="#94a3b8" />
           </svg>
         </div>
 
-        <div class="footer-zone">
-          <div class="footer-badge" id="badgeText">CLICK TO OPEN</div>
-        </div>
+        <div class="open-prompt" id="badgeText">CLICK TO OPEN</div>
+      </div>
+    </div>
+
+    <!-- 中身（メインアプリ画面） -->
+    <div class="inner-page">
+      <header class="app-header">
+        <h2>📍 位置情報シール帳</h2>
+        <p>地図のピン留めや現在地からシールを集めよう！</p>
+      </header>
+
+      <!-- 地図エリア -->
+      <div id="map"></div>
+
+      <!-- 操作ボタン -->
+      <div class="controls">
+        <button id="get-location-btn" class="action-btn">現在地からシールを獲得！</button>
       </div>
 
-      <!-- 中身（ページ） -->
-      <div class="inner-page">
-        <div class="app-header">
-          <h2>📍 位置情報シール帳</h2>
-        </div>
-        
-        <div id="map"></div>
-
-        <div class="controls">
-          <button class="action-btn">現在地からシールを獲得！</button>
-        </div>
-
-        <div class="sticker-shelf">
-          <h3>コレクション</h3>
-          <div class="sticker-list" id="stickerList"></div>
+      <!-- シールコレクション表示エリア -->
+      <div class="sticker-shelf">
+        <h3>獲得したシール帳</h3>
+        <div class="sticker-list" id="stickerList">
+          <span class="empty-msg">まだシールはありません。地図をクリックするか現在地から獲得してください！</span>
         </div>
       </div>
+    </div>
 
+  </div>
+
+  <!-- シール作成・獲得用モーダル -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-content">
+      <h3>新しいシールを登録</h3>
+      <form id="create-sticker-form">
+        <div class="form-group">
+          <label>シールのタイトル</label>
+          <input type="text" id="sticker-title-input" placeholder="例: お気に入りのカフェ" required />
+        </div>
+        <div class="form-group">
+          <label>シール画像 (アップロード)</label>
+          <input type="file" id="sticker-image-input" accept="image/*" required />
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="modal-close-btn" class="cancel-btn">キャンセル</button>
+          <button type="submit" class="submit-btn">シールを追加！</button>
+        </div>
+      </form>
     </div>
   </div>
 
