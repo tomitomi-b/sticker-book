@@ -188,9 +188,10 @@ function renderBoard() {
     el.style.transform = 'translate(-50%, -50%)';
     el.style.cursor = 'move';
     el.style.touchAction = 'none';
+    el.style.zIndex = '10';
     el.innerHTML = `
-      <div style="font-size: 2.5rem; user-select: none;">${stickerDef.icon}</div>
-      <div style="font-size: 0.75rem; text-align: center; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px;">${stickerDef.name}</div>
+      <div style="font-size: 2.5rem; user-select: none; pointer-events: none;">${stickerDef.icon}</div>
+      <div style="font-size: 0.75rem; text-align: center; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px; pointer-events: none;">${stickerDef.name}</div>
     `;
 
     makeDraggable(el, index, canvas);
@@ -207,6 +208,7 @@ function makeDraggable(el, index, canvas) {
     e.preventDefault();
     e.stopPropagation();
     isDragging = true;
+    el.style.zIndex = '1000';
     el.setPointerCapture(e.pointerId);
 
     startX = e.clientX;
@@ -236,16 +238,27 @@ function makeDraggable(el, index, canvas) {
   const onPointerUp = (e) => {
     if (isDragging) {
       isDragging = false;
+      el.style.zIndex = '10';
 
-      // キャンバス枠（点線エリア）の位置を取得
       const canvasRect = canvas.getBoundingClientRect();
 
-      // 指/マウスを離した位置がキャンバス枠の下側（獲得シール一覧エリア）にあるか判定
-      const isDroppedBelowCanvas = e.clientY > canvasRect.bottom - 10;
+      // マウス/指を離した位置が点線枠の外側（特に下側のトレーエリア）にあるか判定
+      const isOutsideCanvas = (
+        e.clientY > canvasRect.bottom - 20 ||
+        e.clientY < canvasRect.top ||
+        e.clientX < canvasRect.left ||
+        e.clientX > canvasRect.right
+      );
 
-      if (isDroppedBelowCanvas) {
-        // ボードからシールを削除してトレーに戻す
-        pageStickers[currentPage].splice(index, 1);
+      if (isOutsideCanvas) {
+        // 1. ボードからシールを取り除く
+        const removed = pageStickers[currentPage].splice(index, 1)[0];
+        
+        // 2. 獲得リスト（unlockedStickers）に無ければ復元追加する
+        if (removed && !unlockedStickers.includes(removed.id)) {
+          unlockedStickers.push(removed.id);
+        }
+
         saveData();
         renderBoard();
         renderTray();
