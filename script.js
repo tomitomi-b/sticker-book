@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
         id: 'sample-1',
         ownerId: 'other-user',
         title: '東京駅限定スタンプ',
-        description: '東京駅丸の内駅舎を記念した特製スタンプです！',
         lat: 35.681236,
         lng: 139.767125,
         image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=150&auto=format&fit=crop&q=60'
@@ -86,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     mapSpots.forEach(spot => {
       const isAlreadyGet = myStickers.some(s => s.id === spot.id);
-      const isMine = spot.ownerId === myUserId; // 自分が作成したものかチェック
+      const isMine = spot.ownerId === myUserId;
 
       const spotIcon = L.icon({
         iconUrl: spot.image,
@@ -114,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
         popupContent.innerHTML = `
           <b>${spot.title}</b>
           <img src="${spot.image}" class="popup-img">
-          <p class="popup-desc">${spot.description || '説明はありません。'}</p>
           <small>${distText}</small>
           <button class="popup-get-btn" ${btnDisabled}>${btnText}</button>
           ${isMine ? `
@@ -138,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
-        // 自分が作成したスポットの場合：編集・削除イベントを登録
+        // 自分のスポットの編集・削除イベント
         if (isMine) {
           const editBtn = popupContent.querySelector('.edit-btn');
           const deleteBtn = popupContent.querySelector('.delete-btn');
@@ -222,16 +220,15 @@ document.addEventListener('DOMContentLoaded', () => {
     spotModal.style.display = 'flex';
   });
 
-  // 編集モーダルを開く関数
+  // 編集モーダルを開く
   function openEditModal(spot) {
     document.getElementById('modal-title').textContent = 'スポットの編集';
     document.getElementById('modal-submit-btn').textContent = '更新する';
     document.getElementById('editing-spot-id').value = spot.id;
     document.getElementById('spot-title-input').value = spot.title;
-    document.getElementById('spot-desc-input').value = spot.description || '';
     document.getElementById('image-input-label').textContent = 'シール画像 (変更する場合のみ)';
     
-    uploadedImageBase64 = spot.image; // デフォルトは既存の画像
+    uploadedImageBase64 = spot.image;
     imageInput.required = false;
 
     spotModal.style.display = 'flex';
@@ -255,26 +252,23 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const editingId = document.getElementById('editing-spot-id').value;
     const title = document.getElementById('spot-title-input').value;
-    const description = document.getElementById('spot-desc-input').value;
 
     if (editingId) {
       // 編集更新
       const targetSpot = mapSpots.find(s => s.id === editingId);
       if (targetSpot) {
         targetSpot.title = title;
-        targetSpot.description = description;
         if (uploadedImageBase64) targetSpot.image = uploadedImageBase64;
       }
-      alert('スポット情報を更新しました！');
+      alert('シール名を更新しました！');
     } else {
       // 新規作成
       if (!uploadedImageBase64 || !selectedLatLng) return;
 
       const newSpot = {
         id: 'spot-' + Date.now(),
-        ownerId: myUserId, // 作成者IDを付与
+        ownerId: myUserId,
         title: title,
-        description: description,
         lat: selectedLatLng.lat,
         lng: selectedLatLng.lng,
         image: uploadedImageBase64
