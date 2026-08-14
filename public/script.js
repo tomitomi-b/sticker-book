@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
               alert(`🎉 「${spot.title}」のシールを獲得しました！`);
               map.closePopup();
               renderMapSpots();
+              renderAlbumAndTray();
             });
           }
 
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ----------------------------------------------------
-  // タップして貼る・戻すシンプル＆確実に動く実装
+  // タップして貼る・戻す仕組み（ID: albumBoard / stickerTray に完全準拠）
   // ----------------------------------------------------
   const albumBoard = document.getElementById('albumBoard');
   const stickerTray = document.getElementById('stickerTray');
@@ -203,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // トレーのシールをタップすると台紙に配置
         item.addEventListener('click', () => {
-          const randomX = 20 + Math.random() * 60; // 20%〜80%の範囲
+          const randomX = 20 + Math.random() * 60; 
           const randomY = 20 + Math.random() * 60;
 
           const newPlacedSticker = {
@@ -252,7 +253,10 @@ document.addEventListener('DOMContentLoaded', () => {
       stickerEl.style.top = `${ps.y}%`;
       stickerEl.style.transform = `translate(-50%, -50%) rotate(${ps.rotation || 0}deg)`;
 
-      stickerEl.innerHTML = `<img src="${ps.image}" alt="${ps.title}">`;
+      stickerEl.innerHTML = `
+        <img src="${ps.image}" alt="${ps.title}">
+        <span>${ps.title}</span>
+      `;
 
       // 台紙上のシールをタップするとトレーに戻る
       stickerEl.addEventListener('click', (e) => {
