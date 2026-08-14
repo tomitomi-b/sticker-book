@@ -249,8 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const moveX = Math.abs(t.clientX - startX);
         const moveY = Math.abs(t.clientY - startY);
 
-        // 少し動かしたらドラッグとみなしてゴーストを表示し、ページのスクロールをロック
-        if (!isDragging && (moveX > 6 || moveY > 6)) {
+        if (!isDragging && (moveX > 4 || moveY > 4)) {
           isDragging = true;
           ghostEl = itemEl.cloneNode(true);
           ghostEl.style.position = 'fixed';
@@ -264,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isDragging && ghostEl) {
           ghostEl.style.left = `${t.clientX}px`;
           ghostEl.style.top = `${t.clientY}px`;
-          ev.preventDefault(); // ドラッグ中はスクロールさせない
+          ev.preventDefault();
         }
       };
 
@@ -272,17 +271,22 @@ document.addEventListener('DOMContentLoaded', () => {
         document.removeEventListener('touchmove', onTouchMove);
         document.removeEventListener('touchend', onTouchEnd);
 
-        if (!isDragging) return; // タップしただけなら何もしない
+        if (!isDragging) {
+          if (ghostEl) ghostEl.remove();
+          return;
+        }
 
+        const touchEnd = ev.changedTouches[0] || (ev.touches && ev.touches[0]);
+        
         if (ghostEl) {
           ghostEl.remove();
           ghostEl = null;
         }
 
-        const touchEnd = ev.changedTouches[0];
+        if (!touchEnd) return;
+
         const boardRect = albumBoard.getBoundingClientRect();
 
-        // 台紙の範囲内か判定
         if (
           touchEnd.clientX >= boardRect.left &&
           touchEnd.clientX <= boardRect.right &&
@@ -327,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let ghostEl = null;
 
       const onMouseMove = (ev) => {
-        if (!isDragging && (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5)) {
+        if (!isDragging && (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4)) {
           isDragging = true;
           ghostEl = itemEl.cloneNode(true);
           ghostEl.style.position = 'fixed';
@@ -391,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const onTouchMove = (ev) => {
         const t = ev.touches[0];
-        if (!isDragging && (Math.abs(t.clientX - startX) > 5 || Math.abs(t.clientY - startY) > 5)) {
+        if (!isDragging && (Math.abs(t.clientX - startX) > 4 || Math.abs(t.clientY - startY) > 4)) {
           isDragging = true;
           stickerEl.style.zIndex = '1000';
         }
@@ -412,7 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isDragging) return;
         stickerEl.style.zIndex = '10';
 
-        const t = ev.changedTouches[0];
+        const t = ev.changedTouches[0] || (ev.touches && ev.touches[0]);
+        if (!t) return;
+
         if (
           t.clientX < boardRect.left ||
           t.clientX > boardRect.right ||
@@ -446,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const boardRect = albumBoard.getBoundingClientRect();
 
       const onMouseMove = (ev) => {
-        if (!isDragging && (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5)) {
+        if (!isDragging && (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4)) {
           isDragging = true;
           stickerEl.style.zIndex = '1000';
         }
