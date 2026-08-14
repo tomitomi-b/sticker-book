@@ -13,12 +13,12 @@
 
   <div class="book-container">
     
-    <!-- 表紙 (カバー) -->
+    <!-- 表紙 -->
     <div class="binder-cover" id="cover">
       <div class="cover-content">
         <div class="logo-triangle"></div>
-        <h1 class="title-main">COLLECTION ALBUM</h1>
-        <p class="title-sub">STATIONERY & STICKERS</p>
+        <h1 class="title-main">STICKER HUNT</h1>
+        <p class="title-sub">COLLECTION ALBUM</p>
         
         <div class="parrot-icon">
           <svg viewBox="0 0 100 100">
@@ -32,52 +32,53 @@
           </svg>
         </div>
 
-        <div class="open-prompt" id="badgeText">CLICK TO OPEN</div>
+        <div class="open-prompt">CLICK TO OPEN</div>
       </div>
     </div>
 
-    <!-- 中身（メインアプリ画面） -->
+    <!-- メイン画面 -->
     <div class="inner-page">
       <header class="app-header">
         <h2>📍 位置情報シール帳</h2>
-        <p>地図のピン留めや現在地からシールを集めよう！</p>
+        <p>スポットに近づいてシールを獲得しよう！</p>
       </header>
 
-      <!-- 地図エリア -->
+      <!-- 地図表示 -->
       <div id="map"></div>
 
-      <!-- 操作ボタン -->
+      <!-- アクションエリア -->
       <div class="controls">
-        <button id="get-location-btn" class="action-btn">現在地からシールを獲得！</button>
+        <button id="locate-me-btn" class="action-btn">現在地を更新する</button>
+        <p class="hint-text">※地図を長押し/クリックで新しいシールスポットを設置できます</p>
       </div>
 
-      <!-- シールコレクション表示エリア -->
+      <!-- シールコレクション -->
       <div class="sticker-shelf">
-        <h3>獲得したシール帳</h3>
-        <div class="sticker-list" id="stickerList">
-          <span class="empty-msg">まだシールはありません。地図をクリックするか現在地から獲得してください！</span>
+        <h3>獲得したシールコレクション</h3>
+        <div class="sticker-list" id="myStickerList">
+          <span class="empty-msg" id="emptyMsg">まだシールを獲得していません。</span>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- シール作成・獲得用モーダル -->
-  <div class="modal-overlay" id="modal-overlay">
+  <!-- シール新規作成モーダル -->
+  <div class="modal-overlay" id="create-modal">
     <div class="modal-content">
-      <h3>新しいシールを登録</h3>
+      <h3>新しいシールスポットを設置</h3>
       <form id="create-sticker-form">
         <div class="form-group">
-          <label>シールのタイトル</label>
-          <input type="text" id="sticker-title-input" placeholder="例: お気に入りのカフェ" required />
+          <label>シール名 / スポット名</label>
+          <input type="text" id="sticker-title-input" placeholder="例: ○○公園の記念スタンプ" required />
         </div>
         <div class="form-group">
-          <label>シール画像 (アップロード)</label>
+          <label>シール画像</label>
           <input type="file" id="sticker-image-input" accept="image/*" required />
         </div>
         <div class="modal-actions">
-          <button type="button" id="modal-close-btn" class="cancel-btn">キャンセル</button>
-          <button type="submit" class="submit-btn">シールを追加！</button>
+          <button type="button" class="cancel-btn" id="create-cancel-btn">キャンセル</button>
+          <button type="submit" class="submit-btn">この場所に設置！</button>
         </div>
       </form>
     </div>
